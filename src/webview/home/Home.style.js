@@ -69,13 +69,13 @@ export default StyleSheet.create({
       height: 5,
       width: 5,
     },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
+    shadowOpacity: 0.9,
+    shadowRadius: 20,
     top: '30%',
     width: '72%'
   },
   opeBtn1: {
-    borderBottomColor: '#f7f7f7',
+    borderBottomColor: '#f0f0f0',
     borderBottomWidth: 1,
     borderStyle: 'solid',
     paddingHorizontal: 24,

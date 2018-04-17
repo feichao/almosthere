@@ -10,6 +10,7 @@ import {
   Switch,
   Alert,
   ToastAndroid,
+  Linking
 } from 'react-native';
 
 import Styles from './Home.style';
@@ -20,6 +21,7 @@ import { Utils } from 'react-native-amap3d';
 import { Locations, Settings } from '../../model';
 
 import { AMapLocation } from '../../modules';
+import { Version } from '../../service';
 
 import Constants from '../../constants';
 import Header from '../../components/header/Header';
@@ -65,6 +67,7 @@ export default class App extends Component {
   componentDidMount() {
     setTimeout(() => {
       SplashScreen.hide();
+      this.checkUpdate();
     }, 2000);
 
     this.props.navigation.addListener('willFocus', this.initLocations);
@@ -74,6 +77,21 @@ export default class App extends Component {
   }
   componentWillUnmount() {
     clearTimeout(this.watchLocationTimer);
+  }
+  checkUpdate() {
+    Version.checkUpdate().then(ret => {
+      const _ver = ret.version;
+      if (_ver.version && _ver.downloadUrl) {
+        Alert.alert('升级提示', `检测到新版本 ${_ver.version}, 是否升级?`, [
+          { text: ' 下次提醒', onPress: () => console.log('update cancel'), style: 'cancel' },
+          {
+            text: '立即升级', onPress: () => {
+              Linking.openURL(_ver.downloadUrl);
+            }
+          },
+        ]);
+      }
+    });
   }
   initLocations() {
     Locations.getLocations().then(locations => {
