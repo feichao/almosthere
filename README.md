@@ -10,4 +10,10 @@
 
 #### [下载链接][1]
 
-  [1]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.0.0.apk
+##### [1.5.1][1]
+##### [1.5.0][2]
+##### [1.0.0][3]
+
+  [1]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.5.1.apk
+  [2]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.5.0.apk
+  [3]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.0.0.apk
