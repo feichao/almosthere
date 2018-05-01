@@ -3585,9 +3585,9 @@ react-native-amap3d@^0.12.1:
   version "0.12.1"
   resolved "http://registry.npm.taobao.org/react-native-amap3d/download/react-native-amap3d-0.12.1.tgz#aaae28a6d7580fc4e3dfc69498a99ddd860b08c5"
 
-react-native-background-timer@^2.0.0:
-  version "2.0.0"
-  resolved "http://registry.npm.taobao.org/react-native-background-timer/download/react-native-background-timer-2.0.0.tgz#afdac10b7441952d570acea4a8dbb065107b5461"
+react-native-background-job@^2.1.1:
+  version "2.1.1"
+  resolved "http://registry.npm.taobao.org/react-native-background-job/download/react-native-background-job-2.1.1.tgz#4ece08e7c59fa107e253a8bc9493cf06eec26a2a"
 
 react-native-dismiss-keyboard@1.0.0:
   version "1.0.0"

@@ -3,9 +3,9 @@ package com.almosthere;
 import android.app.Application;
 
 import com.facebook.react.ReactApplication;
+import com.pilloxa.backgroundjob.BackgroundJobPackage;
 import org.devio.rn.splashscreen.SplashScreenReactPackage;
 import com.dieam.reactnativepushnotification.ReactNativePushNotificationPackage;
-import com.ocetnik.timer.BackgroundTimerPackage;
 import cn.qiuxiang.react.amap3d.AMap3DPackage;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
@@ -29,9 +29,9 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new BackgroundJobPackage(),
             new SplashScreenReactPackage(),
             new ReactNativePushNotificationPackage(),
-            new BackgroundTimerPackage(),
             new AMap3DPackage(),
             new AMapLocationPackage()
       );

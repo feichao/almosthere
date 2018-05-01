@@ -37,8 +37,8 @@
 		832341BD1AAA6AB300B99B32 /* libRCTText.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 832341B51AAA6A8300B99B32 /* libRCTText.a */; };
 		ADBDB9381DFEBF1600ED6528 /* libRCTBlob.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ADBDB9271DFEBF0700ED6528 /* libRCTBlob.a */; };
 		67859D5947AE4D138DC69466 /* libAMap3D.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DD935E9817864202977251A8 /* libAMap3D.a */; };
-		75BF8A80A201482080ABF86D /* libRNBackgroundTimer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C2A3989AA7474B47863C4D38 /* libRNBackgroundTimer.a */; };
 		566080CA7B3F4568A9C4AA94 /* libSplashScreen.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A2601CA9D7D6492D88AC6B7D /* libSplashScreen.a */; };
+		7EC5BE52A52E42C5AEAF4726 /* libRNBackgroundJob.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 168E4AD8BF30476F9499EA47 /* libRNBackgroundJob.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -290,10 +290,10 @@
 		ADBDB91F1DFEBF0600ED6528 /* RCTBlob.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTBlob.xcodeproj; path = "../node_modules/react-native/Libraries/Blob/RCTBlob.xcodeproj"; sourceTree = "<group>"; };
 		94CCA848D53A46A3983E1953 /* AMap3D.xcodeproj */ = {isa = PBXFileReference; name = "AMap3D.xcodeproj"; path = "../node_modules/react-native-amap3d/lib/ios/AMap3D.xcodeproj"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = wrapper.pb-project; explicitFileType = undefined; includeInIndex = 0; };
 		DD935E9817864202977251A8 /* libAMap3D.a */ = {isa = PBXFileReference; name = "libAMap3D.a"; path = "libAMap3D.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
-		03977BE23AF64B039AB5C207 /* RNBackgroundTimer.xcodeproj */ = {isa = PBXFileReference; name = "RNBackgroundTimer.xcodeproj"; path = "../node_modules/react-native-background-timer/ios/RNBackgroundTimer.xcodeproj"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = wrapper.pb-project; explicitFileType = undefined; includeInIndex = 0; };
-		C2A3989AA7474B47863C4D38 /* libRNBackgroundTimer.a */ = {isa = PBXFileReference; name = "libRNBackgroundTimer.a"; path = "libRNBackgroundTimer.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
 		FD1A87CFFB1F460A8C8014DA /* SplashScreen.xcodeproj */ = {isa = PBXFileReference; name = "SplashScreen.xcodeproj"; path = "../node_modules/react-native-splash-screen/ios/SplashScreen.xcodeproj"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = wrapper.pb-project; explicitFileType = undefined; includeInIndex = 0; };
 		A2601CA9D7D6492D88AC6B7D /* libSplashScreen.a */ = {isa = PBXFileReference; name = "libSplashScreen.a"; path = "libSplashScreen.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
+		E6FA059FED9D49DF9C34CA3E /* RNBackgroundJob.xcodeproj */ = {isa = PBXFileReference; name = "RNBackgroundJob.xcodeproj"; path = "../node_modules/react-native-background-job/ios/RNBackgroundJob.xcodeproj"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = wrapper.pb-project; explicitFileType = undefined; includeInIndex = 0; };
+		168E4AD8BF30476F9499EA47 /* libRNBackgroundJob.a */ = {isa = PBXFileReference; name = "libRNBackgroundJob.a"; path = "libRNBackgroundJob.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -323,8 +323,8 @@
 				00C302EA1ABCBA2D00DB3ED1 /* libRCTVibration.a in Frameworks */,
 				139FDEF61B0652A700C62182 /* libRCTWebSocket.a in Frameworks */,
 				67859D5947AE4D138DC69466 /* libAMap3D.a in Frameworks */,
-				75BF8A80A201482080ABF86D /* libRNBackgroundTimer.a in Frameworks */,
 				566080CA7B3F4568A9C4AA94 /* libSplashScreen.a in Frameworks */,
+				7EC5BE52A52E42C5AEAF4726 /* libRNBackgroundJob.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -503,8 +503,8 @@
 				00C302DF1ABCB9EE00DB3ED1 /* RCTVibration.xcodeproj */,
 				139FDEE61B06529A00C62182 /* RCTWebSocket.xcodeproj */,
 				94CCA848D53A46A3983E1953 /* AMap3D.xcodeproj */,
-				03977BE23AF64B039AB5C207 /* RNBackgroundTimer.xcodeproj */,
 				FD1A87CFFB1F460A8C8014DA /* SplashScreen.xcodeproj */,
+				E6FA059FED9D49DF9C34CA3E /* RNBackgroundJob.xcodeproj */,
 			);
 			name = Libraries;
 			sourceTree = "<group>";
@@ -1075,15 +1075,12 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AlmostHere.app/AlmostHere";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/../node_modules/react-native-amap3d/lib/ios/AMap3D/**",
-					"$(SRCROOT)/../node_modules/react-native-background-timer/ios",
 					"$(SRCROOT)/../node_modules/react-native-splash-screen/ios",
+					"$(SRCROOT)/../node_modules/react-native-background-job/ios",
 				);
 			};
 			name = Debug;
@@ -1104,15 +1101,12 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AlmostHere.app/AlmostHere";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/../node_modules/react-native-amap3d/lib/ios/AMap3D/**",
-					"$(SRCROOT)/../node_modules/react-native-background-timer/ios",
 					"$(SRCROOT)/../node_modules/react-native-splash-screen/ios",
+					"$(SRCROOT)/../node_modules/react-native-background-job/ios",
 				);
 			};
 			name = Release;
@@ -1135,8 +1129,8 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/../node_modules/react-native-amap3d/lib/ios/AMap3D/**",
-					"$(SRCROOT)/../node_modules/react-native-background-timer/ios",
 					"$(SRCROOT)/../node_modules/react-native-splash-screen/ios",
+					"$(SRCROOT)/../node_modules/react-native-background-job/ios",
 				);
 			};
 			name = Debug;
@@ -1158,8 +1152,8 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/../node_modules/react-native-amap3d/lib/ios/AMap3D/**",
-					"$(SRCROOT)/../node_modules/react-native-background-timer/ios",
 					"$(SRCROOT)/../node_modules/react-native-splash-screen/ios",
+					"$(SRCROOT)/../node_modules/react-native-background-job/ios",
 				);
 			};
 			name = Release;
@@ -1189,15 +1183,12 @@
 				TVOS_DEPLOYMENT_TARGET = 9.2;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/../node_modules/react-native-amap3d/lib/ios/AMap3D/**",
-					"$(SRCROOT)/../node_modules/react-native-background-timer/ios",
 					"$(SRCROOT)/../node_modules/react-native-splash-screen/ios",
+					"$(SRCROOT)/../node_modules/react-native-background-job/ios",
 				);
 			};
 			name = Debug;
@@ -1227,15 +1218,12 @@
 				TVOS_DEPLOYMENT_TARGET = 9.2;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/../node_modules/react-native-amap3d/lib/ios/AMap3D/**",
-					"$(SRCROOT)/../node_modules/react-native-background-timer/ios",
 					"$(SRCROOT)/../node_modules/react-native-splash-screen/ios",
+					"$(SRCROOT)/../node_modules/react-native-background-job/ios",
 				);
 			};
 			name = Release;
@@ -1260,9 +1248,6 @@
 				TVOS_DEPLOYMENT_TARGET = 10.1;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 			};
 			name = Debug;
@@ -1287,9 +1272,6 @@
 				TVOS_DEPLOYMENT_TARGET = 10.1;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
-					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 			};
 			name = Release;
