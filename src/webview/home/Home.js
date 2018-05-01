@@ -91,7 +91,7 @@ export default class App extends Component {
           },
         ]);
       }
-    });
+    }).catch(() => {});
   }
   initLocations() {
     Locations.getLocations().then(locations => {

@@ -7,7 +7,6 @@ export default {
     }).then(_locations => {
       return _locations;
     }).catch(error => {
-      console.log(error);
       return [];
     });
   },

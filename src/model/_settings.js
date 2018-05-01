@@ -7,7 +7,6 @@ export default {
     }).then(setting => {
       return setting;
     }).catch(error => {
-      console.log(error);
       return {};
     });
   },
