@@ -17,16 +17,40 @@ const LOCATION_PROTOCOL = {
 
 const noop = () => {};
 
+let subscription1, subscription2;
+
 AMapLocation.init(null);
 
 export default {
   LOCATION_MODE,
   LOCATION_PROTOCOL,
+  setOptions(options) {
+    if (typeof options === 'object') {
+      AMapLocation.setOptions(options)
+    }
+  },
+  startUpdatingLocation() {
+    if (subscription2) {
+      subscription2.remove();
+    }
+
+    AMapLocation.stopUpdatingLocation();
+    AMapLocation.startUpdatingLocation();
+    return new Promise((resolve, reject) => {
+      subscription2 = NativeAppEventEmitter.addListener('amap.location.onLocationResult', result => {
+        if (result.code !== undefined || result.error) {
+          reject(result);
+        } else {
+          resolve(result);
+        };
+      });
+    });
+  },
   getLocation(options = {
     locationMode: LOCATION_MODE.BATTERY_SAVING,     // 设置定位模式, 可选的模式有高精度、仅设备、仅网络. 默认为高精度模式.
     gpsFirst: false,                                // 设置是否 gps 优先, 只在高精度模式下有效. 默认关闭.
     httpTimeout: 300000,                            // 设置网络请求超时时间. 默认为30秒. 在仅设备模式下无效.
-    interval: 2000,                                 // 设置连续定位间隔.
+    interval: 2,                                    // 设置连续定位间隔.
     needAddress: true,                              // 设置是否返回逆地理地址信息. 默认是true.
     onceLocation: true,                             // 设置是否单次定位. 默认是 true.
     locationCacheEnable: true,                      // 设置是否开启缓存, 默认为true.
@@ -39,14 +63,18 @@ export default {
       AMapLocation.setOptions(options)
     }
 
+    if (subscription1) {
+      subscription1.remove();
+    }
+
     AMapLocation.getLocation();
     return new Promise((resolve, reject) => {
-      NativeAppEventEmitter.addListener('amap.location.onLocationResult', result => {
+      subscription1 = NativeAppEventEmitter.addListener('amap.location.onLocationResult', result => {
         if (result.code !== undefined || result.error) {
           reject(result);
         } else {
           resolve(result);
-        }
+        };
       });
     });
   },

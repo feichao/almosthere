@@ -8,117 +8,94 @@ import { Utils } from 'react-native-amap3d';
 import { AMapLocation } from '../modules';
 import { Locations, Settings } from '../model';
 
+let lastDis = Infinity;
 const locationErrorTimes = 0;
-const lastDis = Infinity;
 const notify = () => {
-	return Promise.all([Locations.getLocations(), Settings.getSettings()]).then(data => {
-		const locations = data[0];
-		const settings = data[1];
+	return Promise.all([Settings.getSettings(), Locations.getLocations()]).then(data => {
+		const settings = data[0];
+		const enableHighAccuracy = settings.enableHighAccuracy;
+		const enableSound = settings.enableSound === undefined ? true : !!settings.enableSound;
+		const enableVibration = settings.enableVibration === undefined ? true : !!settings.enableVibration;
+
+		const locations = data[1];
 		const _locations = locations.filter(l => !l.deleted && l.enable);
 		if (_locations.length > 0) {
-			return AMapLocation.getLocation({
-				locationMode: settings.enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
+			AMapLocation.setOptions({
+				locationMode: enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
+				gpsFirst: enableHighAccuracy,
+				interval: 1,
+				onceLocation: false,
 				allowsBackgroundLocationUpdates: true
-			}).then(position => {
+			});
+			return AMapLocation.startUpdatingLocation().then(position => {
 				// 初始化定位失败次数
 				locationErrorTimes = 0;
 
 				const { longitude, latitude } = position.coordinate;
 				_locations.forEach(lo => {
 					Utils.distance(latitude, longitude, lo.latitude, lo.longitude).then(dis => {
-						if (dis < +lo.distance) {
-							// 提醒模式: 
-							//	 当前距离 > 500m 时, 每隔 100m 提醒一次
-							//	 当前距离 < 500m 时, 每隔 50m 提醒一次
-							//   当前距离 < 300m 时, 每隔 20m 提醒一次
-							//   当前距离 < 100m 时, 每隔 5s 提醒一次
-							if (dis >= 500 && lastDis - dis > 100) {
+						const _loDis = +lo.distance;
+						if (dis < _loDis) {
+							// 用户设置本次不再提醒
+							if (lo.alertTomorrow) {
+								// noop
+							} else {
+								// 用户设置稍后提醒, 则当距离减少量大于 100 米时提醒用户
+								// if (!lo.alertLater || (lo.alertLater && lastDis - dis > 100)) {
 								PushNotification.localNotification({
 									title: '到这儿',
-									message: `请注意, 距离${lo.name}还有 ${Math.floor(dis)}m, 当前精度 ${position.accuracy}m`,
-									bigText: `请注意, 距离${lo.name}还有 ${Math.floor(dis)}m`,
-									playSound: settings.enableSound === undefined ? true : !!settings.enableSound,
-									vibrate: settings.enableVibration === undefined ? true : !!settings.enableVibration,
-									vibration: 1000,
-									soundName: 'default',
-									actions: '["关闭提醒"]',
-									locationId: lo.id
-								});
-							} else if (dis < 500 && dis >= 300 && lastDis - dis > 50) {
-								PushNotification.localNotification({
-									title: '到这儿',
-									message: `请注意, 距离${lo.name}仅剩 ${Math.floor(dis)}m, 当前精度 ${position.accuracy}m`,
-									bigText: `请注意, 距离${lo.name}仅剩 ${Math.floor(dis)}m`,
-									playSound: settings.enableSound === undefined ? true : !!settings.enableSound,
-									vibrate: settings.enableVibration === undefined ? true : !!settings.enableVibration,
+									message: `距离${lo.name}仅剩 ${Math.floor(dis)} 米, 当前精度 ${position.accuracy} 米`,
+									bigText: `距离${lo.name}仅剩 ${Math.floor(dis)} 米`,
+									playSound: enableSound,
+									vibrate: enableVibration,
 									vibration: 2000,
 									soundName: 'default',
-									actions: '["关闭提醒"]',
+									actions: '["稍后提醒", "不再提醒"]',
 									locationId: lo.id
 								});
-							} else if (dis < 300 && lastDis - dis > 20) {
-								PushNotification.localNotification({
-									title: '到这儿',
-									message: `紧急, 距离${lo.name}仅剩 ${Math.floor(dis)}m, 当前精度 ${position.accuracy}m`,
-									bigText: `紧急, 距离${lo.name}仅剩 ${Math.floor(dis)}m`,
-									playSound: settings.enableSound === undefined ? true : !!settings.enableSound,
-									vibrate: settings.enableVibration === undefined ? true : !!settings.enableVibration,
-									vibration: 2000,
-									soundName: 'default',
-									actions: '["关闭提醒"]',
-									locationId: lo.id
-								});
-							} else if (dis < 100) {
-								PushNotification.localNotification({
-									title: '到这儿',
-									message: `紧急紧急紧急, 距离${lo.name}仅剩 ${Math.floor(dis)}m, 当前精度 ${position.accuracy}m`,
-									bigText: `紧急紧急紧急, 距离${lo.name}仅剩 ${Math.floor(dis)}m`,
-									playSound: settings.enableSound === undefined ? true : !!settings.enableSound,
-									vibrate: settings.enableVibration === undefined ? true : !!settings.enableVibration,
-									vibration: 2000,
-									soundName: 'default',
-									actions: '["关闭提醒"]',
-									locationId: lo.id
-								});
+								// }
 							}
-							lastDis = dis;
 						}
+
+						// 如果当前距离大于 设置的距离 + 精度 * 2, 则重置不再提醒功能
+						if (dis > (position.accuracy * 2 + _loDis)) {
+							lo.alertTomorrow = false;
+						}
+
+						lastDis = dis;
 					});
 				});
 			}).catch(() => {
 				locationErrorTimes++;
 				// 连续定位失败超过 12 次 (1min), 而且用户没有禁止定位失败提醒, 则提醒用户定位失败
-				if (locationErrorTimes > 12 && !settings.stopLocationErrorNotify) {
+				if (locationErrorTimes > 12) {
 					locationErrorTimes = 0;
 					PushNotification.localNotification({
 						title: '到这儿',
-						message: '持续定位失败, 可能是手机信号不好, 正在重试...',
+						message: '定位失败, 可能是手机信号不好, 正在重试...',
 						bigText: '定位失败',
-						playSound: settings.enableSound === undefined ? true : !!settings.enableSound,
-						vibrate: settings.enableVibration === undefined ? true : !!settings.enableVibration,
+						playSound: enableSound,
+						vibrate: enableVibration,
 						vibration: 2000,
-						soundName: 'default',
-						actions: '["此后不再提醒"]',
+						soundName: 'default'
 					});
 				}
 			});
 		}
-		return Promise.reject(false);
+		return Promise.resolve(false);
 	});
 };
 
 const watchNotify = () => {
-	
-	PushNotification.localNotification({
-		title: '到这儿',
-		message: '持续定位失败, 可能是手机信号不好, 正在重试...',
-		bigText: '定位失败',
-		vibration: 2000,
-		soundName: 'default',
-		actions: '["此后不再提醒"]',
+	return notify().finally(() => {
+		// PushNotification.localNotification({
+		// 	title: '到这儿',
+		// 	message: '定位失败, 可能是手机信号不好, 正在重试...',
+		// 	bigText: '定位失败',
+		// 	vibration: 2000,
+		// 	soundName: 'default'
+		// });
 	});
-
-	notify().finally(() => {});
 };
 
 // APP 运行时, 前台任务
@@ -129,12 +106,12 @@ const BACK_LOCATION_JOB_KEY = 'backLocationJob';
 
 BackgroundJob.register({
 	jobKey: FORE_LOCATION_JOB_KEY,
-	job: () => watchNotify()
+	job: async () => await watchNotify()
 });
 
 BackgroundJob.register({
 	jobKey: BACK_LOCATION_JOB_KEY,
-	job: () => watchNotify()
+	job: async () => await watchNotify()
 });
 
 BackgroundJob.schedule({
