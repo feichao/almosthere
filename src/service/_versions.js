@@ -6,7 +6,7 @@ headers.append('Content-Type', 'application/json');
 
 export default {
   checkUpdate() {
-    return fetch(`http://111.230.176.228/api/checkupdate`, {
+    return fetch(`https://almosthere.0xfc.cn/api/checkupdate`, {
       method: 'POST',
       headers,
       body: JSON.stringify({

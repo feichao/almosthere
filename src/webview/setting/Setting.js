@@ -70,7 +70,7 @@ export default class Setting extends Component {
         <TouchableOpacity style={Styles.settingBlock} activeOpacity={0.8} onPress={() => this.updateHighAccuracy(!enableHighAccuracy)}>
           <View style={Styles.settingContent}>
             <Text style={Styles.settingTitle}>启用高精度模式</Text>
-            <Text style={Styles.settingTip}>需要打开设备 GPS, 会消耗更多的电量</Text>
+            <Text style={Styles.settingTip}>打开 GPS 定位, 提高定位精度</Text>
           </View>
           <Switch value={enableHighAccuracy} onValueChange={enable => this.updateHighAccuracy(enable)}></Switch>
         </TouchableOpacity>

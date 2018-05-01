@@ -101,15 +101,6 @@ export default class NewItemStep2 extends Component {
             <Text style={Styles.itemLabel} >默认开启:</Text>
             <Switch onValueChange={(enable) => this.setState({ enable })} value={enable}></Switch>
           </View>
-          {/* <View style={Styles.itemBlock}>
-            <Text style={Styles.itemLabel} >提醒周期:</Text>
-            <Switch onValueChange={(enable) => {
-              this.setState({
-                period: enable ? Constants.Commom.ALERT_PERIOD.PERIOD : Constants.Commom.ALERT_PERIOD.ONCE
-              });
-            }} value={this.isAlertPeriod(period)}></Switch>
-            <Text>{this.isAlertPeriod(period) ? '周期性提醒' : '单次提醒'}</Text>
-          </View> */}
           <View style={Styles.itemBlock}>
             <Text style={Styles.itemLabel} >描述信息:</Text>
             <TextInput style={Styles.itemValue} placeholder='基本描述信息' multiline={true} onChangeText={
