@@ -82,6 +82,7 @@ export default StyleSheet.create({
   },
   nextStepBtnText: {
     color: 'white',
-    fontSize: 20
+    fontSize: 20,
+    lineHeight: 36
   }
 });

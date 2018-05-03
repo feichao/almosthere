@@ -1,5 +1,19 @@
 import Constants from '../constants';
 
+/**
+ * location: {
+ *  id: num 位置 ID, 唯一
+ *  name: string 位置名字
+ *  description: string 位置描述
+ *  enable: bool 是否启用
+ *  distance: num 提醒阈值
+ *  deleted: bool 是否删除
+ *  startOff: array[hour: num, minute: num, second: num] 开始提醒时间
+ *  arrived: array[hour: num, minute: num, second: num] 结束提醒时间
+ *  alartLater: bool 是否稍后提醒
+ *  alertTomorrow: bool 是否结束本次提醒
+ * }
+ */
 export default {
   getLocations() {
     return storage.load({

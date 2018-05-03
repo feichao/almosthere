@@ -1,47 +1,80 @@
-import { ToastAndroid } from 'react-native';
-
 import PushNotification from 'react-native-push-notification';
 import BackgroundJob from 'react-native-background-job';
+import { Utils } from 'react-native-amap3d';
 
 import Constants from '../constants';
-import { Utils } from 'react-native-amap3d';
 import { AMapLocation } from '../modules';
 import { Locations, Settings } from '../model';
 
-let lastDis = Infinity;
-const locationErrorTimes = 0;
-const notify = () => {
-	return Promise.all([Settings.getSettings(), Locations.getLocations()]).then(data => {
+
+let locationErrorTimes = 0; // 记录连续定位失败的次数
+
+const getTimeSeconds = (datetime) => {
+	if (datetime instanceof Array) {
+		return datetime[0] * 3600 + datetime[1] * 60 + datetime[2];
+	}
+	return NaN;
+};
+
+/**
+ * 每天凌晨 2:44 ~ 3:00 期间, 重置 alertTomorrow
+ * 假设 2:44 ~ 3:00 期间没有上下班
+ */
+let isReset = false;
+const resetLocation = locations => {
+	const now = new Date();
+	const nowTime = getTimeSeconds([now.getHours(), now.getMinutes(), now.getSeconds()]);
+
+	if (nowTime > 9840 && nowTime < 10800 && !isReset) {
+		isReset = true;
+
+		locations.forEach(lo => lo.alertTomorrow = false);
+		return Locations.saveLocations(locations);
+	} else if (nowTime > 10800) {
+		isReset = false;
+	}
+	return Promise.resolve(true);
+}
+
+const watchForeground = () => {
+	Promise.all([Settings.getSettings(), Locations.getLocations()]).then(data => {
 		const settings = data[0];
 		const enableHighAccuracy = settings.enableHighAccuracy;
 		const enableSound = settings.enableSound === undefined ? true : !!settings.enableSound;
 		const enableVibration = settings.enableVibration === undefined ? true : !!settings.enableVibration;
 
-		const locations = data[1];
-		const _locations = locations.filter(l => !l.deleted && l.enable);
-		if (_locations.length > 0) {
-			AMapLocation.setOptions({
-				locationMode: enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
-				gpsFirst: enableHighAccuracy,
-				interval: 1,
-				onceLocation: false,
-				allowsBackgroundLocationUpdates: true
-			});
-			return AMapLocation.startUpdatingLocation().then(position => {
-				// 初始化定位失败次数
-				locationErrorTimes = 0;
+		const now = new Date();
+		const nowTime = getTimeSeconds([now.getHours(), now.getMinutes(), now.getSeconds()]);
 
-				const { longitude, latitude } = position.coordinate;
-				_locations.forEach(lo => {
-					Utils.distance(latitude, longitude, lo.latitude, lo.longitude).then(dis => {
-						const _loDis = +lo.distance;
-						if (dis < _loDis) {
-							// 用户设置本次不再提醒
-							if (lo.alertTomorrow) {
-								// noop
-							} else {
-								// 用户设置稍后提醒, 则当距离减少量大于 100 米时提醒用户
-								// if (!lo.alertLater || (lo.alertLater && lastDis - dis > 100)) {
+		const allLocations = data[1];
+		const validLocations = allLocations.filter(l => !l.deleted && l.enable);
+
+		// 这里 reset 有可能应用一直处于前台运行状态, 没有被杀死
+		resetLocation(validLocations).then(() => {
+			// 用户可能在通知栏中设置了 不再提醒
+			const enableLocations = validLocations.filter(l => !lo.alertTomorrow);
+			enableLocations.forEach(lo => {
+				if (Math.abs(getTimeSeconds(lo.startOff)) - nowTime < 8 * 60) {
+					lo.alertTomorrow = false;
+				}
+				if (Math.abs(getTimeSeconds(lo.arrived)) < nowTime) {
+					lo.alertTomorrow = true;
+				}
+			});
+
+			const _locations = enableLocations.filter(lo => !lo.alertTomorrow);
+
+			if (_locations.length > 0) {
+				return AMapLocation.getLocation({
+					locationMode: enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
+					gpsFirst: enableHighAccuracy,
+					allowsBackgroundLocationUpdates: true
+				}).then(position => {
+					const { longitude, latitude } = position.coordinate;
+					_locations.forEach(lo => {
+						Utils.distance(latitude, longitude, lo.latitude, lo.longitude).then(dis => {
+							const _loDis = +lo.distance;
+							if (dis < _loDis) {
 								PushNotification.localNotification({
 									title: '到这儿',
 									message: `距离${lo.name}仅剩 ${Math.floor(dis)} 米, 当前精度 ${position.accuracy} 米`,
@@ -53,65 +86,84 @@ const notify = () => {
 									actions: '["稍后提醒", "不再提醒"]',
 									locationId: lo.id
 								});
-								// }
 							}
-						}
-
-						// 如果当前距离大于 设置的距离 + 精度 * 2, 则重置不再提醒功能
-						if (dis > (position.accuracy * 2 + _loDis)) {
-							lo.alertTomorrow = false;
-						}
-
-						lastDis = dis;
+						});
 					});
-				});
-			}).catch(() => {
-				locationErrorTimes++;
-				// 连续定位失败超过 12 次 (1min), 而且用户没有禁止定位失败提醒, 则提醒用户定位失败
-				if (locationErrorTimes > 12) {
+
+					// 定位成功, 重置定位失败次数
 					locationErrorTimes = 0;
-					PushNotification.localNotification({
-						title: '到这儿',
-						message: '定位失败, 可能是手机信号不好, 正在重试...',
-						bigText: '定位失败',
-						playSound: enableSound,
-						vibrate: enableVibration,
-						vibration: 2000,
-						soundName: 'default'
-					});
-				}
-			});
-		}
-		return Promise.resolve(false);
-	});
+
+				}).catch(() => {
+					// 定位失败
+					locationErrorTimes++;
+
+					// 连续定位失败超过 6 次 (1min), 而且用户没有禁止定位失败提醒, 则提醒用户定位失败
+					if (locationErrorTimes > 6) {
+						locationErrorTimes = 0;
+						PushNotification.localNotification({
+							title: '到这儿',
+							message: '定位失败, 可能是手机信号不好, 正在重试...',
+							bigText: '定位失败',
+							playSound: enableSound,
+							vibrate: enableVibration,
+							vibration: 2000,
+							soundName: 'default'
+						});
+					}
+				});
+			} else {
+				return Promise.resolve(false);
+			}
+		});
+	}).finally(() => { });
 };
 
-const watchNotify = () => {
-	return notify().finally(() => {
-		// PushNotification.localNotification({
-		// 	title: '到这儿',
-		// 	message: '定位失败, 可能是手机信号不好, 正在重试...',
-		// 	bigText: '定位失败',
-		// 	vibration: 2000,
-		// 	soundName: 'default'
-		// });
+/**
+ * 系统杀掉进程时, 后台常驻此服务
+ * 	如果当前时间位于某个位置的提醒时间的 15 分钟区间内 (Android 系统限制), 则提示用户打开 APP
+ */
+const watchBackground = () => {
+	const now = new Date();
+	const nowTime = getTimeSeconds([now.getHours(), now.getMinutes(), now.getSeconds()]);
+	Locations.getLocations().then(_locations => {
+		const locations = _locations.filter(l => !l.deleted && l.enable);
+
+		let validLocation = null;
+		const shouldStartApp = locations.some(_lo => {
+			if (Math.abs(getTimeSeconds(_lo.startOff) - nowTime) < 8 * 60) {
+				validLocation = _lo;
+				return true;
+			}
+			return false;
+		});
+		if (shouldStartApp) {
+			PushNotification.localNotification({
+				title: '到这儿',
+				message: `即将出发前往${validLocation.name}, 请点击此处打开<到这儿>`,
+				bigText: '温馨提示: 请将 <到这儿> 置于系统安全软件的白名单中',
+				vibration: 2000,
+				soundName: 'default'
+			});
+		}
+
+		resetLocation(locations);
 	});
 };
 
 // APP 运行时, 前台任务
-const FORE_LOCATION_JOB_KEY = 'foreLocationJob';
+const FORE_LOCATION_JOB_KEY = 'foregroundLocationJob';
 
 // APP 关闭退出后, 后台任务
-const BACK_LOCATION_JOB_KEY = 'backLocationJob';
+const BACK_LOCATION_JOB_KEY = 'backgroungLocationJob';
 
 BackgroundJob.register({
 	jobKey: FORE_LOCATION_JOB_KEY,
-	job: async () => await watchNotify()
+	job: watchForeground
 });
 
 BackgroundJob.register({
 	jobKey: BACK_LOCATION_JOB_KEY,
-	job: async () => await watchNotify()
+	job: watchBackground
 });
 
 BackgroundJob.schedule({

@@ -7,7 +7,8 @@ import {
   Switch,
   TouchableOpacity,
   ScrollView,
-  ToastAndroid
+  ToastAndroid,
+  TimePickerAndroid
 } from 'react-native';
 import Styles from './NewItemStep2.style';
 
@@ -18,7 +19,10 @@ const DEFAULT_DISTANCE = '800';
 export default class NewItemStep2 extends Component {
   constructor(props) {
     super(props);
+    this.getTimeStr = this.getTimeStr.bind(this);
+    this.selectTime = this.selectTime.bind(this);
     this.confirm = this.confirm.bind(this);
+
 
     this.state = {
       name: '',
@@ -28,8 +32,8 @@ export default class NewItemStep2 extends Component {
       longitude: undefined,
       latitude: undefined,
       period: Constants.Commom.ALERT_PERIOD.ONCE,
-      startTime: 0,
-      stopTime: 0,
+      startOff: [8, 30, 0],
+      arrived: [9, 30, 0],
       disableZThis: false,
       address: ''
     };
@@ -43,7 +47,7 @@ export default class NewItemStep2 extends Component {
       longitude,
       latitude,
       distance = DEFAULT_DISTANCE,
-      enable = false
+      enable = true
     } = this.props.navigation.state.params;
     this.setState({
       id,
@@ -53,11 +57,44 @@ export default class NewItemStep2 extends Component {
       longitude,
       latitude,
       distance,
-      enable
+      enable,
+      startOff: [8, 30, 0],
+      arrived: [9, 30, 0]
     });
   }
   isAlertPeriod(period) {
     return period === Constants.Commom.ALERT_PERIOD.PERIOD;
+  }
+  getTimeStr(num) {
+    if (!+num) {
+      return '00';
+    }
+    return num.toString().length === 1 ? ('0' + num) : num;
+  }
+  selectTime(isStart, time) {
+    return async () => {
+      try {
+        const {action, hour, minute, second} = await TimePickerAndroid.open({
+          hour: time[0],
+          minute: time[1],
+          second: time[2],
+          is24Hour: true,
+        });
+        if (action !== TimePickerAndroid.dismissedAction) {
+          if (isStart) {
+            this.setState({
+              startOff: [hour, minute, second]
+            });
+          } else {
+            this.setState({
+              arrived: [hour, minute, second]
+            });
+          }
+        }
+      } catch ({code, message}) {
+        console.error('Cannot open time picker', message);
+      }
+    }
   }
   confirm() {
     const { name, description, enable, distance } = this.state;
@@ -79,37 +116,72 @@ export default class NewItemStep2 extends Component {
     }
   }
   render() {
-    const { name, description, enable, distance, address, period, startTime, stopTime } = this.state;
+    const { name, description, enable, distance, address, period, startOff, arrived } = this.state;
     return (
       <View style={Styles.container}>
         <ScrollView style={Styles.content}>
-          <View style={Styles.itemBlock}>
-            <Text style={Styles.itemLabel} >记录名称:</Text>
-            <TextInput style={Styles.itemValue} placeholder='为记录起个名字' onChangeText={(name) => this.setState({ name })} value={name} />
+          <View style={Styles.itemContainer}>
+            <View style={Styles.itemBlock}>
+              <Text style={Styles.itemLabel} >记录名称:</Text>
+              <TextInput style={Styles.itemValue} placeholder='为记录起个名字' onChangeText={(name) => this.setState({ name })} value={name} />
+            </View>
+            <Text style={Styles.itemDesc} >为这条记录取个名字, 比如 "家", "公司"</Text>
           </View>
-          <View style={Styles.itemBlock}>
-            <Text style={Styles.itemLabel} keyboardType='numeric'>提醒阈值:</Text>
-            <TextInput style={Styles.itemValue} placeholder='当距离小于多少米时开始提醒' onChangeText={
-              (distance) => {
-                this.setState({ 
-                  distance,
-                  description: `距离${address} ${distance}m 时提醒`
-                });
-              }} value={distance} />
+          <View style={Styles.itemContainer}>
+            <View style={Styles.itemBlock}>
+              <Text style={Styles.itemLabel} keyboardType='numeric'>提醒阈值:</Text>
+              <TextInput style={Styles.itemValue} placeholder='当距离小于多少米时开始提醒' onChangeText={
+                (distance) => {
+                  this.setState({
+                    distance,
+                    description: `距离${address} ${distance}m 时提醒`
+                  });
+                }} value={distance} />
+            </View>
+            <Text style={Styles.itemDesc} >比如回家时, 当你离家 500 米时开始提醒</Text>
           </View>
-          <View style={Styles.itemBlock}>
-            <Text style={Styles.itemLabel} >默认开启:</Text>
-            <Switch onValueChange={(enable) => this.setState({ enable })} value={enable}></Switch>
+          <View style={Styles.itemContainer}>
+            <View style={Styles.itemBlock}>
+              <Text style={Styles.itemLabel} >默认开启:</Text>
+              <Switch onValueChange={(enable) => this.setState({ enable })} value={enable}></Switch>
+            </View>
+            <Text style={Styles.itemDesc} >默认使用还是不使用</Text>
           </View>
-          <View style={Styles.itemBlock}>
-            <Text style={Styles.itemLabel} >描述信息:</Text>
-            <TextInput style={Styles.itemValue} placeholder='基本描述信息' multiline={true} onChangeText={
-              (description) => {
-                this.setState({ 
-                  description: `距离${address} ${distance}m 时提醒`
-                });
-              }} value={description} />
+          <View style={Styles.itemContainer}>
+            <View style={Styles.itemBlock}>
+              <Text style={Styles.itemLabel} >出发时间:</Text>
+              <TouchableOpacity style={Styles.itemTime} activeOpacity={1} onPress={this.selectTime(true, startOff)}>
+                <Text style={Styles.itemTimeValue}>
+                  {this.getTimeStr(startOff[0])}:{this.getTimeStr(startOff[1])}:{this.getTimeStr(startOff[2])}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={Styles.itemDesc} >出发时间, 比如每天早上大概 8:30 出门坐车</Text>
           </View>
+          <View style={Styles.itemContainer}>
+            <View style={Styles.itemBlock}>
+              <Text style={Styles.itemLabel} >到达时间:</Text>
+              <TouchableOpacity style={Styles.itemTime} activeOpacity={1} onPress={this.selectTime(false, arrived)}>
+                <Text style={Styles.itemTimeValue}>
+                  {this.getTimeStr(arrived[0])}:{this.getTimeStr(arrived[1])}:{this.getTimeStr(arrived[2])}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={Styles.itemDesc} >确定达到时间, 比如每天早上大概 9:30 前肯定会到公司</Text>
+          </View>
+          <View style={Styles.itemContainer}>
+            <View style={Styles.itemBlock}>
+              <Text style={Styles.itemLabel} >描述信息:</Text>
+              <TextInput style={Styles.itemValue} placeholder='基本描述信息' multiline={true} onChangeText={
+                (description) => {
+                  this.setState({
+                    description: `距离${address} ${distance}m 时提醒`
+                  });
+                }} value={description} />
+            </View>
+            <Text style={Styles.itemDesc} >一些描述信息, 可以使用默认的, 也可以自定义</Text>
+          </View>
+          <View style={{height: 50}}></View>
         </ScrollView>
         <TouchableOpacity style={Styles.confirmBtn} activeOpacity={0.75} onPress={this.confirm}>
           <Text style={Styles.confirmBtnText}>保存</Text>
