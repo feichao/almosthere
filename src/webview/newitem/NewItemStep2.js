@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import Styles from './NewItemStep2.style';
 
+import Utils from '../../utils';
 import Constants from '../../constants';
 import { Locations } from '../../model';
 
@@ -19,7 +20,6 @@ const DEFAULT_DISTANCE = '500';
 export default class NewItemStep2 extends Component {
   constructor(props) {
     super(props);
-    this.getTimeStr = this.getTimeStr.bind(this);
     this.selectTime = this.selectTime.bind(this);
     this.confirm = this.confirm.bind(this);
 
@@ -27,7 +27,7 @@ export default class NewItemStep2 extends Component {
     this.state = {
       name: '',
       description: '',
-      enable: false,
+      enable: true,
       distance: DEFAULT_DISTANCE,
       longitude: undefined,
       latitude: undefined,
@@ -46,7 +46,9 @@ export default class NewItemStep2 extends Component {
       longitude,
       latitude,
       distance = DEFAULT_DISTANCE,
-      enable = true
+      enable = true,
+      startOff = [8, 30, 0],
+      arrived = [9, 30, 0]
     } = this.props.navigation.state.params;
     this.setState({
       id,
@@ -57,23 +59,17 @@ export default class NewItemStep2 extends Component {
       latitude,
       distance,
       enable,
-      startOff: [8, 30, 0],
-      arrived: [9, 30, 0]
+      startOff,
+      arrived
     });
   }
   isAlertPeriod(period) {
     return period === Constants.Common.ALERT_PERIOD.PERIOD;
   }
-  getTimeStr(num) {
-    if (!+num) {
-      return '00';
-    }
-    return num.toString().length === 1 ? ('0' + num) : num;
-  }
   selectTime(isStart, time) {
     return async () => {
       try {
-        const {action, hour, minute, second} = await TimePickerAndroid.open({
+        const {action, hour, minute, second = 0} = await TimePickerAndroid.open({
           hour: time[0],
           minute: time[1],
           second: time[2],
@@ -106,7 +102,7 @@ export default class NewItemStep2 extends Component {
     } else if (!+distance) {
       ToastAndroid.show('提醒阈值应该是数字', ToastAndroid.SHORT);
     } else {
-      Locations.saveLocation(this.state).then(() => {
+      Locations.saveLocation({...this.state, alartLater: false, alertTomorrow: false}).then(() => {
         const { popToTop } = this.props.navigation;
         popToTop();
 
@@ -150,7 +146,7 @@ export default class NewItemStep2 extends Component {
               <Text style={Styles.itemLabel} >出发时间</Text>
               <TouchableOpacity style={Styles.itemTime} activeOpacity={1} onPress={this.selectTime(true, startOff)}>
                 <Text style={Styles.itemTimeValue}>
-                  {this.getTimeStr(startOff[0])}:{this.getTimeStr(startOff[1])}:{this.getTimeStr(startOff[2])}
+                  {startOff.map(Utils.getTimeStr).join(':')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -161,7 +157,7 @@ export default class NewItemStep2 extends Component {
               <Text style={Styles.itemLabel} >到达时间</Text>
               <TouchableOpacity style={Styles.itemTime} activeOpacity={1} onPress={this.selectTime(false, arrived)}>
                 <Text style={Styles.itemTimeValue}>
-                  {this.getTimeStr(arrived[0])}:{this.getTimeStr(arrived[1])}:{this.getTimeStr(arrived[2])}
+                  {arrived.map(Utils.getTimeStr).join(':')}
                 </Text>
               </TouchableOpacity>
             </View>

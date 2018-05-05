@@ -29,7 +29,7 @@ DeviceEventEmitter.addListener('notificationActionReceived', function(action){
       id: locationId,
       alartLater: true
     });
-  } else if (info.action === '不再提醒' && locationId !== undefined) {
+  } else if ((info.action === '不再提醒') && locationId !== undefined) {
     Locations.saveLocation({
       id: locationId,
       alertTomorrow: true

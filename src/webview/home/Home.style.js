@@ -38,13 +38,13 @@ export default StyleSheet.create({
   },
   itemDesc: {
     fontSize: 14,
-    lineHeight: 16,
+    lineHeight: 20,
     marginTop: 8
   },
   itemValidTip: {
     color: 'rgb(208, 68, 40)',
     fontSize: 14,
-    marginTop: 5
+    marginTop: 6
   },
   itemInvalidTip: {
     color: '#999',

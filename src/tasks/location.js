@@ -3,18 +3,12 @@ import BackgroundJob from 'react-native-background-job';
 import { Utils } from 'react-native-amap3d';
 
 import Constants from '../constants';
+import Tools from '../utils';
 import { AMapLocation } from '../modules';
 import { Locations, Settings } from '../model';
 
 
 let locationErrorTimes = 0; // 记录连续定位失败的次数
-
-const getTimeSeconds = (datetime) => {
-	if (datetime instanceof Array) {
-		return datetime[0] * 3600 + datetime[1] * 60 + datetime[2];
-	}
-	return NaN;
-};
 
 /**
  * 每天凌晨 2:44 ~ 3:00 期间, 重置 alertTomorrow
@@ -23,7 +17,7 @@ const getTimeSeconds = (datetime) => {
 let isReset = false;
 const resetLocation = locations => {
 	const now = new Date();
-	const nowTime = getTimeSeconds([now.getHours(), now.getMinutes(), now.getSeconds()]);
+	const nowTime = Tools.getTimeSeconds([now.getHours(), now.getMinutes(), now.getSeconds()]);
 
 	if (nowTime > 9840 && nowTime < 10800 && !isReset) {
 		isReset = true;
@@ -44,7 +38,7 @@ const watchForeground = () => {
 		const enableVibration = settings.enableVibration === undefined ? true : !!settings.enableVibration;
 
 		const now = new Date();
-		const nowTime = getTimeSeconds([now.getHours(), now.getMinutes(), now.getSeconds()]);
+		const nowTime = Tools.getTimeSeconds([now.getHours(), now.getMinutes(), now.getSeconds()]);
 
 		const allLocations = data[1];
 		const validLocations = allLocations.filter(l => !l.deleted && l.enable);
@@ -53,22 +47,21 @@ const watchForeground = () => {
 		resetLocation(validLocations).then(() => {
 			// 用户可能在通知栏中设置了 不再提醒
 			const enableLocations = validLocations.filter(lo => !lo.alertTomorrow);
+
 			enableLocations.forEach(lo => {
-				if (Math.abs(getTimeSeconds(lo.startOff)) - nowTime < 8 * 60) {
+				if (Math.abs(Tools.getTimeSeconds(lo.startOff)) - nowTime < 8 * 60) {
 					lo.alertTomorrow = false;
 				}
-				if (Math.abs(getTimeSeconds(lo.arrived)) < nowTime) {
+				if (Math.abs(Tools.getTimeSeconds(lo.arrived)) < nowTime) {
 					lo.alertTomorrow = true;
 				}
 			});
 
 			const _locations = enableLocations.filter(lo => !lo.alertTomorrow);
-
 			if (_locations.length > 0) {
 				return AMapLocation.getLocation({
 					locationMode: enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
 					gpsFirst: enableHighAccuracy,
-					allowsBackgroundLocationUpdates: true
 				}).then(position => {
 					const { longitude, latitude } = position.coordinate;
 					_locations.forEach(lo => {
@@ -124,29 +117,31 @@ const watchForeground = () => {
  */
 const watchBackground = () => {
 	const now = new Date();
-	const nowTime = getTimeSeconds([now.getHours(), now.getMinutes(), now.getSeconds()]);
-	Locations.getLocations().then(_locations => {
-		const locations = _locations.filter(l => !l.deleted && l.enable);
+	const nowTime = Tools.getTimeSeconds([now.getHours(), now.getMinutes(), now.getSeconds()]);
+
+	return Locations.getLocations().then(_locations => {
+		// 重置下次提醒功能
+		resetLocation(_locations);
 
 		let validLocation = null;
+		const locations = _locations.filter(l => !l.deleted && l.enable && !l.alertTomorrow);
 		const shouldStartApp = locations.some(_lo => {
-			if (Math.abs(getTimeSeconds(_lo.startOff) - nowTime) < 8 * 60) {
+			if (Math.abs(Tools.getTimeSeconds(_lo.startOff) - nowTime) < 8 * 60) {
 				validLocation = _lo;
 				return true;
 			}
 			return false;
 		});
+
 		if (shouldStartApp) {
 			PushNotification.localNotification({
-				title: '到这儿',
+				title: '到这儿温馨提示',
 				message: `即将出发前往${validLocation.name}, 请点击此处打开<到这儿>`,
-				bigText: '温馨提示: 请将 <到这儿> 置于系统安全软件的白名单中',
+				bigText: `即将出发前往${validLocation.name}, 请点击此处打开<到这儿>. 请将 <到这儿> 置于系统安全软件的白名单中.`,
 				vibration: 2000,
-				soundName: 'default'
+				soundName: 'default',
 			});
 		}
-
-		resetLocation(locations);
 	});
 };
 
@@ -163,13 +158,11 @@ BackgroundJob.register({
 
 BackgroundJob.register({
 	jobKey: BACK_LOCATION_JOB_KEY,
-	job: watchBackground
+	job: async() => await watchBackground()
 });
 
 BackgroundJob.schedule({
 	jobKey: FORE_LOCATION_JOB_KEY,
-	override: true,
-	allowWhileIdle: true,
 	allowExecutionInForeground: true,
 	period: Constants.Common.GET_LOCATION_TIMEOUT,
 	exact: true
@@ -177,7 +170,5 @@ BackgroundJob.schedule({
 
 BackgroundJob.schedule({
 	jobKey: BACK_LOCATION_JOB_KEY,
-	override: true,
-	allowWhileIdle: true,
 	period: Constants.Common.GET_LOCATION_TIMEOUT
 });

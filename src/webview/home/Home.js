@@ -20,6 +20,7 @@ import SplashScreen from 'react-native-splash-screen';
 import { Utils } from 'react-native-amap3d';
 import { Locations, Settings } from '../../model';
 
+import Tools from '../../utils';
 import { AMapLocation } from '../../modules';
 import { Version } from '../../service';
 
@@ -83,7 +84,7 @@ export default class App extends Component {
       const _ver = ret.version;
       if (_ver.version && _ver.downloadUrl) {
         Alert.alert('升级提示', `检测到新版本 ${_ver.version}, 是否升级?`, [
-          { text: ' 下次提醒', onPress: () => console.log('update cancel'), style: 'cancel' },
+          { text: '下次提醒', onPress: () => console.log('update cancel'), style: 'cancel' },
           {
             text: '立即升级', onPress: () => {
               Linking.openURL(_ver.downloadUrl);
@@ -147,7 +148,8 @@ export default class App extends Component {
     if (locationsEnable.length > 0) {
       Settings.getSettings().then(settings => {
         AMapLocation.getLocation({
-          locationMode: settings.enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING
+          locationMode: settings.enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
+          gpsFirst: settings.enableHighAccuracy,
         }).then(position => {
           const { longitude, latitude } = position.coordinate;
           locationsEnable.map(lo => {
@@ -185,7 +187,7 @@ export default class App extends Component {
     if (data.enable) {
       const distance = this.state.locationDistaces[data.id];
       if (distance) {
-        return <Text style={Styles.itemValidTip}>剩余距离: {Math.floor(distance)}m</Text>;
+        return <Text style={Styles.itemValidTip}>剩余距离: {Tools.getFriendlyDis(distance)}</Text>;
       } else {
         return <Text style={Styles.itemInvalidTip}>正在定位...</Text>;
       }
@@ -211,7 +213,9 @@ export default class App extends Component {
                   <View style={Styles.itemBlock}>
                     <View style={Styles.itemContent}>
                       <Text style={Styles.itemName}>{data.name}</Text>
-                      <Text style={Styles.itemDesc}>{data.description}</Text>
+                      <Text style={Styles.itemDesc}>
+                        提醒时间从 {data.startOff.map(Tools.getTimeStr).join(':')} 持续到 {data.arrived.map(Tools.getTimeStr).join(':')}, 距离 {data.distance} 米时开始提醒
+                      </Text>
                       {
                         this.getItemTip(data)
                       }

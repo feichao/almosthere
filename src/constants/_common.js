@@ -1,4 +1,4 @@
-const GET_LOCATION_TIMEOUT = 10000;
+const GET_LOCATION_TIMEOUT = 8000;
 export default {
   STORAGE: {
     LOCATIONS: 'locations',
