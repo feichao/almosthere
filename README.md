@@ -15,7 +15,7 @@
 ##### [1.5.0][2]
 ##### [1.0.0][1]
 
-  [4]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.6.0.apk
+  [4]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.6.apk
   [3]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.5.1.apk
   [2]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.5.0.apk
   [1]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.0.0.apk
