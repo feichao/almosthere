@@ -5,6 +5,7 @@ import {
   Text,
   View
 } from 'react-native';
+import Config from '../../config';
 import Styles from './About.style';
 import LogoBG from '../../assets/imgs/logo-bg.png';
 export default class About extends Component {
@@ -13,7 +14,7 @@ export default class About extends Component {
       <View style={Styles.container}>
         <Image style={Styles.logoBg} source={LogoBG}></Image>
         <Text style={Styles.welcome}>
-          到这儿 1.0
+          到这儿 {Config.VERSION}
         </Text>
         <Text style={Styles.instructions}>
           For Darling Kaier
