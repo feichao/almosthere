@@ -15,7 +15,7 @@ import Styles from './NewItemStep2.style';
 import Constants from '../../constants';
 import { Locations } from '../../model';
 
-const DEFAULT_DISTANCE = '800';
+const DEFAULT_DISTANCE = '500';
 export default class NewItemStep2 extends Component {
   constructor(props) {
     super(props);
@@ -31,10 +31,9 @@ export default class NewItemStep2 extends Component {
       distance: DEFAULT_DISTANCE,
       longitude: undefined,
       latitude: undefined,
-      period: Constants.Commom.ALERT_PERIOD.ONCE,
+      period: Constants.Common.ALERT_PERIOD.ONCE,
       startOff: [8, 30, 0],
       arrived: [9, 30, 0],
-      disableZThis: false,
       address: ''
     };
   }
@@ -63,7 +62,7 @@ export default class NewItemStep2 extends Component {
     });
   }
   isAlertPeriod(period) {
-    return period === Constants.Commom.ALERT_PERIOD.PERIOD;
+    return period === Constants.Common.ALERT_PERIOD.PERIOD;
   }
   getTimeStr(num) {
     if (!+num) {
@@ -122,56 +121,55 @@ export default class NewItemStep2 extends Component {
         <ScrollView style={Styles.content}>
           <View style={Styles.itemContainer}>
             <View style={Styles.itemBlock}>
-              <Text style={Styles.itemLabel} >记录名称:</Text>
+              <Text style={Styles.itemLabel} >记录名称</Text>
               <TextInput style={Styles.itemValue} placeholder='为记录起个名字' onChangeText={(name) => this.setState({ name })} value={name} />
             </View>
-            <Text style={Styles.itemDesc} >为这条记录取个名字, 比如 "家", "公司"</Text>
           </View>
           <View style={Styles.itemContainer}>
             <View style={Styles.itemBlock}>
-              <Text style={Styles.itemLabel} keyboardType='numeric'>提醒阈值:</Text>
-              <TextInput style={Styles.itemValue} placeholder='当距离小于多少米时开始提醒' onChangeText={
+              <Text style={Styles.itemLabel}>提醒阈值</Text>
+              <TextInput style={Styles.itemValue} keyboardType='numeric' placeholder='当距离小于多少米时开始提醒' onChangeText={
                 (distance) => {
                   this.setState({
                     distance,
                     description: `距离${address} ${distance}m 时提醒`
                   });
                 }} value={distance} />
+                <Text>米</Text>
             </View>
-            <Text style={Styles.itemDesc} >比如回家时, 当你离家 500 米时开始提醒</Text>
+            <Text style={Styles.itemDesc} >比如回家时, 当距离家 500 米时开始提醒</Text>
           </View>
           <View style={Styles.itemContainer}>
             <View style={Styles.itemBlock}>
-              <Text style={Styles.itemLabel} >默认开启:</Text>
-              <Switch onValueChange={(enable) => this.setState({ enable })} value={enable}></Switch>
+              <Text style={Styles.itemLabel} >默认开启</Text>
+              <Switch style={Styles.itemSwitch} onValueChange={(enable) => this.setState({ enable })} value={enable}></Switch>
             </View>
-            <Text style={Styles.itemDesc} >默认使用还是不使用</Text>
           </View>
           <View style={Styles.itemContainer}>
             <View style={Styles.itemBlock}>
-              <Text style={Styles.itemLabel} >出发时间:</Text>
+              <Text style={Styles.itemLabel} >出发时间</Text>
               <TouchableOpacity style={Styles.itemTime} activeOpacity={1} onPress={this.selectTime(true, startOff)}>
                 <Text style={Styles.itemTimeValue}>
                   {this.getTimeStr(startOff[0])}:{this.getTimeStr(startOff[1])}:{this.getTimeStr(startOff[2])}
                 </Text>
               </TouchableOpacity>
             </View>
-            <Text style={Styles.itemDesc} >出发时间, 比如每天早上大概 8:30 出门坐车</Text>
+            <Text style={Styles.itemDesc} >比如每天早上大概 8:30 出门坐车</Text>
           </View>
           <View style={Styles.itemContainer}>
             <View style={Styles.itemBlock}>
-              <Text style={Styles.itemLabel} >到达时间:</Text>
+              <Text style={Styles.itemLabel} >到达时间</Text>
               <TouchableOpacity style={Styles.itemTime} activeOpacity={1} onPress={this.selectTime(false, arrived)}>
                 <Text style={Styles.itemTimeValue}>
                   {this.getTimeStr(arrived[0])}:{this.getTimeStr(arrived[1])}:{this.getTimeStr(arrived[2])}
                 </Text>
               </TouchableOpacity>
             </View>
-            <Text style={Styles.itemDesc} >确定达到时间, 比如每天早上大概 9:30 前肯定会到公司</Text>
+            <Text style={Styles.itemDesc} >比如每天早上大概 9:30 前肯定会到公司</Text>
           </View>
           <View style={Styles.itemContainer}>
             <View style={Styles.itemBlock}>
-              <Text style={Styles.itemLabel} >描述信息:</Text>
+              <Text style={Styles.itemLabel} >描述信息</Text>
               <TextInput style={Styles.itemValue} placeholder='基本描述信息' multiline={true} onChangeText={
                 (description) => {
                   this.setState({
@@ -179,7 +177,6 @@ export default class NewItemStep2 extends Component {
                   });
                 }} value={description} />
             </View>
-            <Text style={Styles.itemDesc} >一些描述信息, 可以使用默认的, 也可以自定义</Text>
           </View>
           <View style={{height: 50}}></View>
         </ScrollView>

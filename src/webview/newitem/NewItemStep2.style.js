@@ -14,29 +14,43 @@ export default StyleSheet.create({
     width: '100%'
   },
   itemContainer: {
-    marginBottom: 20
+    marginBottom: 18
   },
   itemBlock: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginVertical: 12,
+    marginVertical: 10,
     width: '100%'
   },
   itemLabel: {
     color: '#666',
     fontSize: 16,
-    marginRight: 10
+    width: 100
   },
   itemValue: {
     flex: 1,
     flexDirection: 'row',
-    fontSize: 16
+    fontSize: 16,
+    marginHorizontal: -4,
+    marginVertical: -8
+  },
+  itemSwitch: {
+    marginLeft: -4
   },
   itemTime: {
     backgroundColor: 'rgb(208, 68, 40)',
+    borderRadius: 2,
+    elevation: 2,
     flex: 1,
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 6,
+    shadowColor: 'rgba(208, 68, 40, .8)',
+    shadowOffset: {
+      height: 2,
+      width: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
   },
   itemTimeValue: {
     color: 'white',
@@ -47,6 +61,7 @@ export default StyleSheet.create({
   itemDesc: {
     color: '#aaa',
     fontSize: 14,
+    marginLeft: 100
   },
   confirmBtn: {
     alignItems: 'center',

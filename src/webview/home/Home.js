@@ -167,7 +167,7 @@ export default class App extends Component {
         }).finally(() => {
           this.watchLocationTimer = setTimeout(() => {
             this.initLocations();
-          }, Constants.Commom.GET_LOCATION_TIMEOUT);
+          }, Constants.Common.GET_LOCATION_TIMEOUT);
         });
       });
     }

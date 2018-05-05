@@ -17,7 +17,7 @@ import Constants from '../constants';
 export default {
   getLocations() {
     return storage.load({
-      key: Constants.Commom.STORAGE.LOCATIONS
+      key: Constants.Common.STORAGE.LOCATIONS
     }).then(_locations => {
       return _locations;
     }).catch(error => {
@@ -26,7 +26,7 @@ export default {
   },
   saveLocations(locations) {
     return storage.save({
-      key: Constants.Commom.STORAGE.LOCATIONS,
+      key: Constants.Common.STORAGE.LOCATIONS,
       data: locations
     });
   },
@@ -46,7 +46,7 @@ export default {
         }
       }
       return storage.save({
-        key: Constants.Commom.STORAGE.LOCATIONS,
+        key: Constants.Common.STORAGE.LOCATIONS,
         data: _locations
       });
     });

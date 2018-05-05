@@ -3,7 +3,7 @@ import Constants from '../constants';
 export default {
   getSettings() {
     return storage.load({
-      key: Constants.Commom.STORAGE.SETTINGS
+      key: Constants.Common.STORAGE.SETTINGS
     }).then(setting => {
       return setting;
     }).catch(error => {
@@ -12,7 +12,7 @@ export default {
   },
   saveSettings(setting) {
     return storage.save({
-      key: Constants.Commom.STORAGE.SETTINGS,
+      key: Constants.Common.STORAGE.SETTINGS,
       data: setting
     });
   }

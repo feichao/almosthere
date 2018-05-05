@@ -1,5 +1,5 @@
-import Commom from './_common';
+import Common from './_common';
 
 export default {
-  Commom
+  Common
 };

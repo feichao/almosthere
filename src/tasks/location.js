@@ -52,7 +52,7 @@ const watchForeground = () => {
 		// 这里 reset 有可能应用一直处于前台运行状态, 没有被杀死
 		resetLocation(validLocations).then(() => {
 			// 用户可能在通知栏中设置了 不再提醒
-			const enableLocations = validLocations.filter(l => !lo.alertTomorrow);
+			const enableLocations = validLocations.filter(lo => !lo.alertTomorrow);
 			enableLocations.forEach(lo => {
 				if (Math.abs(getTimeSeconds(lo.startOff)) - nowTime < 8 * 60) {
 					lo.alertTomorrow = false;
@@ -171,7 +171,7 @@ BackgroundJob.schedule({
 	override: true,
 	allowWhileIdle: true,
 	allowExecutionInForeground: true,
-	period: Constants.Commom.GET_LOCATION_TIMEOUT,
+	period: Constants.Common.GET_LOCATION_TIMEOUT,
 	exact: true
 });
 
@@ -179,5 +179,5 @@ BackgroundJob.schedule({
 	jobKey: BACK_LOCATION_JOB_KEY,
 	override: true,
 	allowWhileIdle: true,
-	period: Constants.Commom.GET_LOCATION_TIMEOUT
+	period: Constants.Common.GET_LOCATION_TIMEOUT
 });
