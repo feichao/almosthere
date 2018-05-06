@@ -1,3 +1,4 @@
+import { NativeModules, ToastAndroid } from 'react-native';
 import PushNotification from 'react-native-push-notification';
 import BackgroundJob from 'react-native-background-job';
 import { Utils } from 'react-native-amap3d';
@@ -31,6 +32,8 @@ const resetLocation = locations => {
 }
 
 const watchForeground = () => {
+	console.log('watchForeground++++++++++');
+
 	Promise.all([Settings.getSettings(), Locations.getLocations()]).then(data => {
 		const settings = data[0];
 		const enableHighAccuracy = settings.enableHighAccuracy;
@@ -61,7 +64,7 @@ const watchForeground = () => {
 			if (_locations.length > 0) {
 				return AMapLocation.getLocation({
 					locationMode: enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
-					gpsFirst: enableHighAccuracy,
+					// gpsFirst: enableHighAccuracy,
 				}).then(position => {
 					const { longitude, latitude } = position.coordinate;
 					_locations.forEach(lo => {
@@ -119,12 +122,35 @@ const watchBackground = () => {
 	const now = new Date();
 	const nowTime = Tools.getTimeSeconds([now.getHours(), now.getMinutes(), now.getSeconds()]);
 
+	console.log('watchBackground----------');
+
 	return Locations.getLocations().then(_locations => {
 		// 重置下次提醒功能
 		resetLocation(_locations);
 
 		let validLocation = null;
 		const locations = _locations.filter(l => !l.deleted && l.enable && !l.alertTomorrow);
+
+		// 应用被清理, 监测有没有正在监测的位置信息, 优先提醒此信息
+		const shouldAlertUser = locations.some(_lo => {
+			if (Tools.getTimeSeconds(_lo.startOff) < nowTime && Tools.getTimeSeconds(_lo.arrived) > nowTime) {
+				validLocation = _lo;
+				return true;
+			}
+			return false;
+		});
+
+		if (shouldAlertUser) {
+			return PushNotification.localNotification({
+				title: '到这儿',
+				message: `正在监测离${validLocation.name}的距离, 但是 <到这儿> 已被系统清理, 请点击此处重新打开 <到这儿>.`,
+				bigText: `正在监测离${validLocation.name}的距离, 但是 <到这儿> 已被系统清理, 无法提供定位服务. 请点击此处重新打开 <到这儿>, 以便到这儿继续为您提供服务.`,
+				vibration: 2000,
+				soundName: 'default',
+			});
+		}
+
+		// 应用被清理, 监测有没有即将开始的提醒
 		const shouldStartApp = locations.some(_lo => {
 			if (Math.abs(Tools.getTimeSeconds(_lo.startOff) - nowTime) < 8 * 60) {
 				validLocation = _lo;
@@ -134,10 +160,10 @@ const watchBackground = () => {
 		});
 
 		if (shouldStartApp) {
-			PushNotification.localNotification({
-				title: '到这儿温馨提示',
+			return PushNotification.localNotification({
+				title: '到这儿',
 				message: `即将出发前往${validLocation.name}, 请点击此处打开<到这儿>`,
-				bigText: `即将出发前往${validLocation.name}, 请点击此处打开<到这儿>. 请将 <到这儿> 置于系统安全软件的白名单中.`,
+				bigText: `即将出发前往${validLocation.name}, 请点击此处打开<到这儿>.`,
 				vibration: 2000,
 				soundName: 'default',
 			});
@@ -145,30 +171,32 @@ const watchBackground = () => {
 	});
 };
 
-// APP 运行时, 前台任务
-const FORE_LOCATION_JOB_KEY = 'foregroundLocationJob';
-
-// APP 关闭退出后, 后台任务
-const BACK_LOCATION_JOB_KEY = 'backgroungLocationJob';
+const LOCATION_JOB_KEY = 'AlmosthereLocationJob';
 
 BackgroundJob.register({
-	jobKey: FORE_LOCATION_JOB_KEY,
-	job: watchForeground
-});
-
-BackgroundJob.register({
-	jobKey: BACK_LOCATION_JOB_KEY,
-	job: async() => await watchBackground()
+	jobKey: LOCATION_JOB_KEY,
+	job: () => {
+		NativeModules.AppState.getCurrentAppState((appStateData) => {
+			console.log('app state: ', appStateData.app_state);
+			switch (appStateData.app_state) {
+				case 'active':
+				case 'background':
+					watchForeground();
+					break;
+				case 'uninitialized':
+					// 用户杀死应用
+					watchBackground();
+					break;
+				default: break;
+			}
+		}, () => { });
+	}
 });
 
 BackgroundJob.schedule({
-	jobKey: FORE_LOCATION_JOB_KEY,
+	jobKey: LOCATION_JOB_KEY,
 	allowExecutionInForeground: true,
+	allowWhileIdle: true,
 	period: Constants.Common.GET_LOCATION_TIMEOUT,
 	exact: true
-});
-
-BackgroundJob.schedule({
-	jobKey: BACK_LOCATION_JOB_KEY,
-	period: Constants.Common.GET_LOCATION_TIMEOUT
 });

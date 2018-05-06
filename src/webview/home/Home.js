@@ -16,6 +16,8 @@ import {
 import Styles from './Home.style';
 
 import SplashScreen from 'react-native-splash-screen';
+import BackgroundJob from 'react-native-background-job';
+import PushNotification from 'react-native-push-notification';
 
 import { Utils } from 'react-native-amap3d';
 import { Locations, Settings } from '../../model';
@@ -71,6 +73,23 @@ export default class App extends Component {
       this.checkUpdate();
     }, 2000);
 
+    BackgroundJob.isAppIgnoringBatteryOptimization((error, ignoringOptimization) => {
+      if (error) {
+        return console.log(error);
+      }
+      if (!ignoringOptimization) {
+        PushNotification.localNotification({
+          title: '到这儿',
+          message: '为了提供稳定的服务, 建议您将 <到这儿> 放到系统安全软件的白名单中',
+          bigText: '为了提供稳定的服务, 建议您将 <到这儿> 放到系统安全软件的白名单中',
+          playSound: true,
+          vibrate: true,
+          vibration: 2000,
+          soundName: 'default'
+        });
+      }
+    });
+
     this.props.navigation.addListener('willFocus', this.initLocations);
     this.props.navigation.addListener('didBlur', this.hideOpe);
 
@@ -92,7 +111,7 @@ export default class App extends Component {
           },
         ]);
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }
   initLocations() {
     Locations.getLocations().then(locations => {
@@ -149,7 +168,7 @@ export default class App extends Component {
       Settings.getSettings().then(settings => {
         AMapLocation.getLocation({
           locationMode: settings.enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
-          gpsFirst: settings.enableHighAccuracy,
+          // gpsFirst: settings.enableHighAccuracy,
         }).then(position => {
           const { longitude, latitude } = position.coordinate;
           locationsEnable.map(lo => {
@@ -237,14 +256,14 @@ export default class App extends Component {
         </TouchableOpacity>
         {
           isShowOperateView && (
-          <View style={Styles.opeContainer}>
-            <TouchableOpacity style={Styles.opeBtn1} activeOpacity={0.75} onPress={this.navigateToEditItem}>
-              <Text style={Styles.opeBtnText}>编辑</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={Styles.opeBtn2} activeOpacity={0.75} onPress={this.deleteLocation}>
-              <Text style={Styles.opeBtnText}>删除</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={Styles.opeContainer}>
+              <TouchableOpacity style={Styles.opeBtn1} activeOpacity={0.75} onPress={this.navigateToEditItem}>
+                <Text style={Styles.opeBtnText}>编辑</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={Styles.opeBtn2} activeOpacity={0.75} onPress={this.deleteLocation}>
+                <Text style={Styles.opeBtnText}>删除</Text>
+              </TouchableOpacity>
+            </View>
           )
         }
       </View>
