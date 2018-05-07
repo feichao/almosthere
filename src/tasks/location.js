@@ -63,8 +63,9 @@ const watchForeground = () => {
 			const _locations = enableLocations.filter(lo => !lo.alertTomorrow);
 			if (_locations.length > 0) {
 				return AMapLocation.getLocation({
+					allowsBackgroundLocationUpdates: true,
+					gpsFirst: enableHighAccuracy,
 					locationMode: enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
-					// gpsFirst: enableHighAccuracy,
 				}).then(position => {
 					const { longitude, latitude } = position.coordinate;
 					_locations.forEach(lo => {
@@ -172,6 +173,9 @@ const watchBackground = () => {
 };
 
 const LOCATION_JOB_KEY = 'AlmosthereLocationJob';
+
+BackgroundJob.cancel({jobKey: LOCATION_JOB_KEY});
+console.log('cancel', LOCATION_JOB_KEY);
 
 BackgroundJob.register({
 	jobKey: LOCATION_JOB_KEY,

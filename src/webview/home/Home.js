@@ -16,7 +16,7 @@ import {
 import Styles from './Home.style';
 
 import SplashScreen from 'react-native-splash-screen';
-import BackgroundJob from 'react-native-background-job';
+// import BackgroundJob from 'react-native-background-job';
 import PushNotification from 'react-native-push-notification';
 
 import { Utils } from 'react-native-amap3d';
@@ -73,22 +73,22 @@ export default class App extends Component {
       this.checkUpdate();
     }, 2000);
 
-    BackgroundJob.isAppIgnoringBatteryOptimization((error, ignoringOptimization) => {
-      if (error) {
-        return console.log(error);
-      }
-      if (!ignoringOptimization) {
-        PushNotification.localNotification({
-          title: '到这儿',
-          message: '为了提供稳定的服务, 建议您将 <到这儿> 放到系统安全软件的白名单中',
-          bigText: '为了提供稳定的服务, 建议您将 <到这儿> 放到系统安全软件的白名单中',
-          playSound: true,
-          vibrate: true,
-          vibration: 2000,
-          soundName: 'default'
-        });
-      }
-    });
+    // BackgroundJob.isAppIgnoringBatteryOptimization((error, ignoringOptimization) => {
+    //   if (error) {
+    //     return console.log(error);
+    //   }
+    //   if (!ignoringOptimization) {
+    //     PushNotification.localNotification({
+    //       title: '到这儿',
+    //       message: '为了提供稳定的服务, 建议您将 <到这儿> 放到系统安全软件的白名单中',
+    //       bigText: '为了提供稳定的服务, 建议您将 <到这儿> 放到系统安全软件的白名单中',
+    //       playSound: true,
+    //       vibrate: true,
+    //       vibration: 2000,
+    //       soundName: 'default'
+    //     });
+    //   }
+    // });
 
     this.props.navigation.addListener('willFocus', this.initLocations);
     this.props.navigation.addListener('didBlur', this.hideOpe);
@@ -96,6 +96,7 @@ export default class App extends Component {
     this.initLocations();
   }
   componentWillUnmount() {
+    console.log('home unmount');
     clearTimeout(this.watchLocationTimer);
   }
   checkUpdate() {
@@ -167,8 +168,9 @@ export default class App extends Component {
     if (locationsEnable.length > 0) {
       Settings.getSettings().then(settings => {
         AMapLocation.getLocation({
+          allowsBackgroundLocationUpdates: true,
+          gpsFirst: settings.enableHighAccuracy,
           locationMode: settings.enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
-          // gpsFirst: settings.enableHighAccuracy,
         }).then(position => {
           const { longitude, latitude } = position.coordinate;
           locationsEnable.map(lo => {
@@ -186,11 +188,14 @@ export default class App extends Component {
           // }
           ToastAndroid.show('正在定位...', ToastAndroid.SHORT);
         }).finally(() => {
+          ToastAndroid.show('定位完成', ToastAndroid.SHORT);
           this.watchLocationTimer = setTimeout(() => {
             this.initLocations();
-          }, Constants.Common.GET_LOCATION_TIMEOUT);
+          }, Constants.Common.GET_LOCATION_TIMEOUT / 3);
         });
       });
+    } else {
+      ToastAndroid.show('没有位置信息', ToastAndroid.SHORT);
     }
   }
   navigateToNewItem() {
