@@ -7,22 +7,27 @@ import {
   TouchableOpacity,
   ToastAndroid,
   ScrollView,
-  Keyboard
+  Keyboard,
+  NativeAppEventEmitter
 } from 'react-native';
 import Styles from './NewItemStep1.style';
 
 import { MapView } from 'react-native-amap3d';
 
+import Constants from '../../constants';
 import { AMapLocation } from '../../modules';
 import { AMap } from '../../service';
+import { Settings } from '../../model';
 
 export default class NewItemStep1 extends Component {
   constructor(props) {
     super(props);
+    this.getLocation = this.getLocation.bind(this);
     this.selectLocation = this.selectLocation.bind(this);
     this.searchLocation = this.searchLocation.bind(this);
     this.navigateToNewItemStep2 = this.navigateToNewItemStep2.bind(this);
 
+    this.subscribeLocationResult = null;
     this.checkTimer = undefined;
     this.isFirst = true;
     this.state = {
@@ -45,22 +50,36 @@ export default class NewItemStep1 extends Component {
   }
   componentDidMount() {
     ToastAndroid.show('定位中...', ToastAndroid.SHORT);
-    AMapLocation.getLocation().then(position => {
-      const { longitude, latitude } = position.coordinate;
-      this.setState({
-        currentLocation: {
-          longitude, latitude
-        },
-        selectedLocation: {
-          longitude, latitude
-        }
-      }, () => {
-        this.selectLocation({ nativeEvent: this.state.selectedLocation });
-      });
+    this.subscribeLocationResult = NativeAppEventEmitter.addListener(Constants.Common.LOCATION_RESULT, result => {
+      if (result.code !== undefined || result.error) {
+        ToastAndroid.show('定位中...', ToastAndroid.SHORT);
+        this.getLocation();
+      } else {
+        const { longitude, latitude } = result.coordinate;
+        this.setState({
+          currentLocation: {
+            longitude, latitude
+          },
+          selectedLocation: {
+            longitude, latitude
+          }
+        }, () => {
+          this.selectLocation({ nativeEvent: this.state.selectedLocation });
+        });
+      };
     });
+
+    this.getLocation();
   }
   componentWillUnmount() {
     clearTimeout(this.checkTimer);
+    if (this.subscribeLocationResult && typeof this.subscribeLocationResult.remove === 'function') {
+      console.log('unsubscribe location result');
+      this.subscribeLocationResult.remove();
+    }
+  }
+  getLocation() {
+    AMapLocation.getLocation();
   }
   selectLocation({ nativeEvent }) {
     const { longitude, latitude } = nativeEvent;
