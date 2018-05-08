@@ -1,4 +1,4 @@
-import { NativeModules, ToastAndroid } from 'react-native';
+import { NativeModules, ToastAndroid, NativeAppEventEmitter } from 'react-native';
 import PushNotification from 'react-native-push-notification';
 import BackgroundJob from 'react-native-background-job';
 import { Utils } from 'react-native-amap3d';
@@ -9,7 +9,12 @@ import { AMapLocation } from '../modules';
 import { Locations, Settings } from '../model';
 
 
-let locationErrorTimes = 0; // 记录连续定位失败的次数
+let locationErrorTimes = 0; 			// 记录连续定位失败的次数
+let subscribeLocationResult;
+let validLocations;
+let enableHighAccuracy = false;
+let enableSound = false;
+let enableVibration = false;
 
 /**
  * 每天凌晨 2:44 ~ 3:00 期间, 重置 alertTomorrow
@@ -31,27 +36,76 @@ const resetLocation = locations => {
 	return Promise.resolve(true);
 }
 
+const listenLocationResult = () => {
+	subscribeLocationResult = NativeAppEventEmitter.addListener(Constants.Common.LOCATION_RESULT, result => {
+		if (result.code !== undefined || result.error) {
+			console.log('定位失败: ', result);
+			locationErrorTimes++;
+			// 连续定位失败超过 6 次 (1min), 而且用户没有禁止定位失败提醒, 则提醒用户定位失败
+			if (locationErrorTimes > 6) {
+				locationErrorTimes = 0;
+				PushNotification.localNotification({
+					title: '到这儿',
+					message: '定位失败, 可能是手机信号不好, 正在重试...',
+					bigText: '定位失败',
+					playSound: enableSound,
+					vibrate: enableVibration,
+					vibration: 2000,
+					soundName: 'default'
+				});
+			}
+		} else {
+			const { longitude, latitude } = result.coordinate;
+			if (Array.isArray(validLocations) && validLocations.length) {
+				const { longitude, latitude } = position.coordinate;
+				validLocations.forEach(lo => {
+					Utils.distance(latitude, longitude, lo.latitude, lo.longitude).then(dis => {
+						const _loDis = +lo.distance;
+						if (dis < _loDis) {
+							PushNotification.localNotification({
+								title: '到这儿',
+								message: `距离${lo.name}仅剩 ${Math.floor(dis)} 米, 当前精度 ${position.accuracy} 米`,
+								bigText: `距离${lo.name}仅剩 ${Math.floor(dis)} 米`,
+								playSound: enableSound,
+								vibrate: enableVibration,
+								vibration: 2000,
+								soundName: 'default',
+								actions: '["稍后提醒", "不再提醒"]',
+								locationId: lo.id
+							});
+						}
+					});
+				});
+
+				// 定位成功, 重置定位失败次数
+				locationErrorTimes = 0;
+			}
+		};
+	});
+}
+
 const watchForeground = () => {
 	console.log('watchForeground++++++++++');
 
 	Promise.all([Settings.getSettings(), Locations.getLocations()]).then(data => {
 		const settings = data[0];
-		const enableHighAccuracy = settings.enableHighAccuracy;
-		const enableSound = settings.enableSound === undefined ? true : !!settings.enableSound;
-		const enableVibration = settings.enableVibration === undefined ? true : !!settings.enableVibration;
+
+		enableHighAccuracy = settings.enableHighAccuracy;
+		enableSound = settings.enableSound === undefined ? true : !!settings.enableSound;
+		enableVibration = settings.enableVibration === undefined ? true : !!settings.enableVibration;
 
 		const now = new Date();
 		const nowTime = Tools.getTimeSeconds([now.getHours(), now.getMinutes(), now.getSeconds()]);
 
 		const allLocations = data[1];
-		const validLocations = allLocations.filter(l => !l.deleted && l.enable);
+		const enableLocations = allLocations.filter(l => !l.deleted && l.enable);
 
 		// 这里 reset 有可能应用一直处于前台运行状态, 没有被杀死
-		resetLocation(validLocations).then(() => {
+		resetLocation(enableLocations).then(() => {
 			// 用户可能在通知栏中设置了 不再提醒
-			const enableLocations = validLocations.filter(lo => !lo.alertTomorrow);
+			const tempLocations = enableLocations.filter(lo => !lo.alertTomorrow);
 
-			enableLocations.forEach(lo => {
+			tempLocations.forEach(lo => {
 				if (Math.abs(Tools.getTimeSeconds(lo.startOff)) - nowTime < 8 * 60) {
 					lo.alertTomorrow = false;
 				}
@@ -60,56 +114,14 @@ const watchForeground = () => {
 				}
 			});
 
-			const _locations = enableLocations.filter(lo => !lo.alertTomorrow);
-			if (_locations.length > 0) {
-				return AMapLocation.getLocation({
+			validLocations = tempLocations.filter(lo => !lo.alertTomorrow);
+
+			if (validLocations.length > 0) {
+				AMapLocation.getLocation({
 					allowsBackgroundLocationUpdates: true,
 					gpsFirst: enableHighAccuracy,
 					locationMode: enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
-				}).then(position => {
-					const { longitude, latitude } = position.coordinate;
-					_locations.forEach(lo => {
-						Utils.distance(latitude, longitude, lo.latitude, lo.longitude).then(dis => {
-							const _loDis = +lo.distance;
-							if (dis < _loDis) {
-								PushNotification.localNotification({
-									title: '到这儿',
-									message: `距离${lo.name}仅剩 ${Math.floor(dis)} 米, 当前精度 ${position.accuracy} 米`,
-									bigText: `距离${lo.name}仅剩 ${Math.floor(dis)} 米`,
-									playSound: enableSound,
-									vibrate: enableVibration,
-									vibration: 2000,
-									soundName: 'default',
-									actions: '["稍后提醒", "不再提醒"]',
-									locationId: lo.id
-								});
-							}
-						});
-					});
-
-					// 定位成功, 重置定位失败次数
-					locationErrorTimes = 0;
-
-				}).catch(() => {
-					// 定位失败
-					locationErrorTimes++;
-
-					// 连续定位失败超过 6 次 (1min), 而且用户没有禁止定位失败提醒, 则提醒用户定位失败
-					if (locationErrorTimes > 6) {
-						locationErrorTimes = 0;
-						PushNotification.localNotification({
-							title: '到这儿',
-							message: '定位失败, 可能是手机信号不好, 正在重试...',
-							bigText: '定位失败',
-							playSound: enableSound,
-							vibrate: enableVibration,
-							vibration: 2000,
-							soundName: 'default'
-						});
-					}
-				});
-			} else {
-				return Promise.resolve(false);
+				})
 			}
 		});
 	}).finally(() => { });
@@ -172,24 +184,44 @@ const watchBackground = () => {
 	});
 };
 
-const LOCATION_JOB_KEY = 'AlmosthereLocationJob';
+const LOCATION_JOB_KEY_FORE = 'AlmosthereLocationJobForeground';
+const LOCATION_JOB_KEY_BACK = 'AlmosthereLocationJobBackground';
 
-BackgroundJob.cancel({jobKey: LOCATION_JOB_KEY});
-console.log('cancel', LOCATION_JOB_KEY);
+BackgroundJob.cancelAll();
 
 BackgroundJob.register({
-	jobKey: LOCATION_JOB_KEY,
+	jobKey: LOCATION_JOB_KEY_FORE,
 	job: () => {
 		NativeModules.AppState.getCurrentAppState((appStateData) => {
-			console.log('app state: ', appStateData.app_state);
+			console.log('fore app state: ', appStateData.app_state);
 			switch (appStateData.app_state) {
 				case 'active':
 				case 'background':
+					listenLocationResult();
 					watchForeground();
 					break;
 				case 'uninitialized':
-					// 用户杀死应用
+					break;
+				default: break;
+			}
+		}, () => { });
+	}
+});
+
+BackgroundJob.register({
+	jobKey: LOCATION_JOB_KEY_BACK,
+	job: () => {
+		NativeModules.AppState.getCurrentAppState((appStateData) => {
+			console.log('back app state: ', appStateData.app_state);
+			switch (appStateData.app_state) {
+				case 'active':
+				case 'background':
+					break;
+				case 'uninitialized':
 					watchBackground();
+					if (subscribeLocationResult && typeof subscribeLocationResult.remove) {
+						subscribeLocationResult.remove();
+					}
 					break;
 				default: break;
 			}
@@ -198,9 +230,17 @@ BackgroundJob.register({
 });
 
 BackgroundJob.schedule({
-	jobKey: LOCATION_JOB_KEY,
+	jobKey: LOCATION_JOB_KEY_FORE,
 	allowExecutionInForeground: true,
 	allowWhileIdle: true,
 	period: Constants.Common.GET_LOCATION_TIMEOUT,
-	exact: true
+	exact: true,
+	override: true
+});
+
+BackgroundJob.schedule({
+	jobKey: LOCATION_JOB_KEY_BACK,
+	allowWhileIdle: true,
+	period: Constants.Common.GET_LOCATION_TIMEOUT,
+	override: true
 });

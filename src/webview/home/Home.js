@@ -10,13 +10,13 @@ import {
   Switch,
   Alert,
   ToastAndroid,
-  Linking
+  Linking,
+  NativeAppEventEmitter
 } from 'react-native';
 
 import Styles from './Home.style';
 
 import SplashScreen from 'react-native-splash-screen';
-// import BackgroundJob from 'react-native-background-job';
 import PushNotification from 'react-native-push-notification';
 
 import { Utils } from 'react-native-amap3d';
@@ -56,10 +56,12 @@ export default class App extends Component {
     this.deleteLocation = this.deleteLocation.bind(this);
     this.updateLocation = this.updateLocation.bind(this);
     this.watchLocation = this.watchLocation.bind(this);
+    this.listenLocationResult = this.listenLocationResult.bind(this);
 
     this.showOperateView = this.showOperateView.bind(this);
 
     this.watchLocationTimer = null;
+    this.subscribeLocationResult = null;
     this.state = {
       locations: [],
       locationDistaces: {},
@@ -73,31 +75,18 @@ export default class App extends Component {
       this.checkUpdate();
     }, 2000);
 
-    // BackgroundJob.isAppIgnoringBatteryOptimization((error, ignoringOptimization) => {
-    //   if (error) {
-    //     return console.log(error);
-    //   }
-    //   if (!ignoringOptimization) {
-    //     PushNotification.localNotification({
-    //       title: '到这儿',
-    //       message: '为了提供稳定的服务, 建议您将 <到这儿> 放到系统安全软件的白名单中',
-    //       bigText: '为了提供稳定的服务, 建议您将 <到这儿> 放到系统安全软件的白名单中',
-    //       playSound: true,
-    //       vibrate: true,
-    //       vibration: 2000,
-    //       soundName: 'default'
-    //     });
-    //   }
-    // });
-
     this.props.navigation.addListener('willFocus', this.initLocations);
     this.props.navigation.addListener('didBlur', this.hideOpe);
 
     this.initLocations();
+    this.listenLocationResult();
   }
   componentWillUnmount() {
-    console.log('home unmount');
     clearTimeout(this.watchLocationTimer);
+    if (this.subscribeLocationResult && typeof this.subscribeLocationResult.remove === 'function') {
+      console.log('unsubscribe location result');
+      this.subscribeLocationResult.remove();
+    }
   }
   checkUpdate() {
     Version.checkUpdate().then(ret => {
@@ -161,42 +150,39 @@ export default class App extends Component {
     }
   }
   watchLocation() {
-    clearTimeout(this.watchLocationTimer);
-
-    const { locations } = this.state;
-    const locationsEnable = locations.filter(l => l.enable);
+    const locationsEnable = this.state.locations.filter(l => l.enable);
     if (locationsEnable.length > 0) {
       Settings.getSettings().then(settings => {
         AMapLocation.getLocation({
-          allowsBackgroundLocationUpdates: true,
           gpsFirst: settings.enableHighAccuracy,
           locationMode: settings.enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
-        }).then(position => {
-          const { longitude, latitude } = position.coordinate;
-          locationsEnable.map(lo => {
-            return Utils.distance(latitude, longitude, lo.latitude, lo.longitude).then(dis => {
-              this.setState({
-                locationDistaces: Object.assign({}, this.state.locationDistaces, {
-                  [lo.id]: dis
-                })
-              });
-            });
-          });
-        }).catch(error => {
-          // console.log(error.code);
-          // if (error.code) {
-          // }
-          ToastAndroid.show('正在定位...', ToastAndroid.SHORT);
-        }).finally(() => {
-          ToastAndroid.show('定位完成', ToastAndroid.SHORT);
-          this.watchLocationTimer = setTimeout(() => {
-            this.initLocations();
-          }, Constants.Common.GET_LOCATION_TIMEOUT / 3);
         });
       });
-    } else {
-      ToastAndroid.show('没有位置信息', ToastAndroid.SHORT);
+      clearTimeout(this.watchLocationTimer);
+      this.watchLocationTimer = setTimeout(this.initLocations, Constants.Common.GET_LOCATION_TIMEOUT);
     }
+  }
+  listenLocationResult() {
+    this.subscribeLocationResult = NativeAppEventEmitter.addListener(Constants.Common.LOCATION_RESULT, result => {
+      if (result.code !== undefined || result.error) {
+        console.log('定位失败: ', result);
+        ToastAndroid.show('正在定位...', ToastAndroid.SHORT);
+      } else {
+        const { longitude, latitude } = result.coordinate;
+        const locationsEnable = this.state.locations.filter(l => l.enable);
+        Promise.all(locationsEnable.map(lo => {
+          return Utils.distance(latitude, longitude, lo.latitude, lo.longitude);
+        })).then(disAll => {
+          const locationDistaces = {};
+          locationsEnable.forEach((lo, index) => {
+            locationDistaces[lo.id] = disAll[index];
+          });
+          this.setState({
+            locationDistaces
+          });
+        });
+      };
+    });
   }
   navigateToNewItem() {
     const { navigate } = this.props.navigation;
@@ -211,7 +197,7 @@ export default class App extends Component {
     if (data.enable) {
       const distance = this.state.locationDistaces[data.id];
       if (distance) {
-        return <Text style={Styles.itemValidTip}>剩余距离: {Tools.getFriendlyDis(distance)}</Text>;
+        return <Text style={Styles.itemValidTip}>距离目的地: {Tools.getFriendlyDis(distance)}</Text>;
       } else {
         return <Text style={Styles.itemInvalidTip}>正在定位...</Text>;
       }

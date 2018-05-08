@@ -128,11 +128,11 @@ export default class NewItemStep1 extends Component {
           ToastAndroid.show('没有查到任何数据', ToastAndroid.SHORT);
         }
       } catch (exception) {
-        ToastAndroid.show('搜索出错', ToastAndroid.SHORT);
+        ToastAndroid.show('搜索出错, 请重试', ToastAndroid.SHORT);
         console.log(exception);
       }
     }).finally(() => {
-      ToastAndroid.show('搜索完成', ToastAndroid.SHORT);
+      // ToastAndroid.show('搜索完成', ToastAndroid.SHORT);
       this.setState({
         loadingSearch: false
       });

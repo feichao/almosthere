@@ -15,12 +15,6 @@ const LOCATION_PROTOCOL = {
   HTTPS: AMapLocation.HTTPS,
 };
 
-const noop = () => {};
-
-let subscription1, subscription2;
-
-AMapLocation.init(null);
-
 export default {
   LOCATION_MODE,
   LOCATION_PROTOCOL,
@@ -59,23 +53,12 @@ export default {
     sensorEnable: false,                            // 设置是否使用传感器。默认是false
     allowsBackgroundLocationUpdates: false          // 设置是否允许后台定位
   }) {
+    AMapLocation.init(null);
+
     if (typeof options === 'object') {
       AMapLocation.setOptions(options)
     }
 
-    if (subscription1) {
-      subscription1.remove();
-    }
-
     AMapLocation.getLocation();
-    return new Promise((resolve, reject) => {
-      subscription1 = NativeAppEventEmitter.addListener('amap.location.onLocationResult', result => {
-        if (result.code !== undefined || result.error) {
-          reject(result);
-        } else {
-          resolve(result);
-        };
-      });
-    });
   },
 };
