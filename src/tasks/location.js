@@ -36,6 +36,11 @@ const resetLocation = locations => {
 	return Promise.resolve(true);
 }
 
+const unListenLocationResult = () => {
+	if (subscribeLocationResult && typeof subscribeLocationResult.remove) {
+		subscribeLocationResult.remove();
+	}
+};
 const listenLocationResult = () => {
 	subscribeLocationResult = NativeAppEventEmitter.addListener(Constants.Common.LOCATION_RESULT, result => {
 		if (result.code !== undefined || result.error) {
@@ -57,14 +62,14 @@ const listenLocationResult = () => {
 		} else {
 			const { longitude, latitude } = result.coordinate;
 			if (Array.isArray(validLocations) && validLocations.length) {
-				const { longitude, latitude } = position.coordinate;
+				const { longitude, latitude } = result.coordinate;
 				validLocations.forEach(lo => {
 					Utils.distance(latitude, longitude, lo.latitude, lo.longitude).then(dis => {
 						const _loDis = +lo.distance;
 						if (dis < _loDis) {
 							PushNotification.localNotification({
 								title: '到这儿',
-								message: `距离${lo.name}仅剩 ${Math.floor(dis)} 米, 当前精度 ${position.accuracy} 米`,
+								message: `距离${lo.name}仅剩 ${Math.floor(dis)} 米, 当前精度 ${result.accuracy} 米`,
 								bigText: `距离${lo.name}仅剩 ${Math.floor(dis)} 米`,
 								playSound: enableSound,
 								vibrate: enableVibration,
@@ -90,7 +95,7 @@ const watchForeground = () => {
 	Promise.all([Settings.getSettings(), Locations.getLocations()]).then(data => {
 		const settings = data[0];
 
-		enableHighAccuracy = settings.enableHighAccuracy;
+		enableHighAccuracy = !!settings.enableHighAccuracy;
 		enableSound = settings.enableSound === undefined ? true : !!settings.enableSound;
 		enableVibration = settings.enableVibration === undefined ? true : !!settings.enableVibration;
 
@@ -106,7 +111,7 @@ const watchForeground = () => {
 			const tempLocations = enableLocations.filter(lo => !lo.alertTomorrow);
 
 			tempLocations.forEach(lo => {
-				if (Math.abs(Tools.getTimeSeconds(lo.startOff)) - nowTime < 8 * 60) {
+				if (Math.abs(Tools.getTimeSeconds(lo.startOff)) - nowTime < 10 * 60) {
 					lo.alertTomorrow = false;
 				}
 				if (Math.abs(Tools.getTimeSeconds(lo.arrived)) < nowTime) {
@@ -165,7 +170,7 @@ const watchBackground = () => {
 
 		// 应用被清理, 监测有没有即将开始的提醒
 		const shouldStartApp = locations.some(_lo => {
-			if (Math.abs(Tools.getTimeSeconds(_lo.startOff) - nowTime) < 8 * 60) {
+			if (Math.abs(Tools.getTimeSeconds(_lo.startOff) - nowTime) < 10 * 60) {
 				validLocation = _lo;
 				return true;
 			}
@@ -197,6 +202,7 @@ BackgroundJob.register({
 			switch (appStateData.app_state) {
 				case 'active':
 				case 'background':
+					unListenLocationResult();
 					listenLocationResult();
 					watchForeground();
 					break;
@@ -218,10 +224,8 @@ BackgroundJob.register({
 				case 'background':
 					break;
 				case 'uninitialized':
+					unListenLocationResult();
 					watchBackground();
-					if (subscribeLocationResult && typeof subscribeLocationResult.remove) {
-						subscribeLocationResult.remove();
-					}
 					break;
 				default: break;
 			}

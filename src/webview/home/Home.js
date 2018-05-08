@@ -23,7 +23,6 @@ import { Utils } from 'react-native-amap3d';
 import { Locations, Settings } from '../../model';
 
 import Tools from '../../utils';
-import { AMapLocation } from '../../modules';
 import { Version } from '../../service';
 
 import Constants from '../../constants';
@@ -55,12 +54,10 @@ export default class App extends Component {
     this.initLocations = this.initLocations.bind(this);
     this.deleteLocation = this.deleteLocation.bind(this);
     this.updateLocation = this.updateLocation.bind(this);
-    this.watchLocation = this.watchLocation.bind(this);
     this.listenLocationResult = this.listenLocationResult.bind(this);
 
     this.showOperateView = this.showOperateView.bind(this);
 
-    this.watchLocationTimer = null;
     this.subscribeLocationResult = null;
     this.state = {
       locations: [],
@@ -82,7 +79,6 @@ export default class App extends Component {
     this.listenLocationResult();
   }
   componentWillUnmount() {
-    clearTimeout(this.watchLocationTimer);
     if (this.subscribeLocationResult && typeof this.subscribeLocationResult.remove === 'function') {
       console.log('unsubscribe location result');
       this.subscribeLocationResult.remove();
@@ -104,11 +100,11 @@ export default class App extends Component {
     }).catch(() => { });
   }
   initLocations() {
+    Settings.getSettings().then(settings => console.log('settings: ', settings));
+
     Locations.getLocations().then(locations => {
       this.setState({
         locations: locations.filter(a => !a.deleted)
-      }, () => {
-        this.watchLocation();
       });
     });
   }
@@ -147,19 +143,6 @@ export default class App extends Component {
       this.setState({
         isShowOperateView: false
       });
-    }
-  }
-  watchLocation() {
-    const locationsEnable = this.state.locations.filter(l => l.enable);
-    if (locationsEnable.length > 0) {
-      Settings.getSettings().then(settings => {
-        AMapLocation.getLocation({
-          gpsFirst: settings.enableHighAccuracy,
-          locationMode: settings.enableHighAccuracy ? AMapLocation.LOCATION_MODE.HIGHT_ACCURACY : AMapLocation.LOCATION_MODE.BATTERY_SAVING,
-        });
-      });
-      clearTimeout(this.watchLocationTimer);
-      this.watchLocationTimer = setTimeout(this.initLocations, Constants.Common.GET_LOCATION_TIMEOUT);
     }
   }
   listenLocationResult() {
