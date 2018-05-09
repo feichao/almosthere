@@ -10,8 +10,7 @@ import Constants from '../constants';
  *  deleted: bool 是否删除
  *  startOff: array[hour: num, minute: num, second: num] 开始提醒时间
  *  arrived: array[hour: num, minute: num, second: num] 结束提醒时间
- *  alartLater: bool 是否稍后提醒
- *  alertTomorrow: bool 是否结束本次提醒
+ *  stopAlert: startOff ~ arrived 时间段内不再提醒
  * }
  */
 export default {

@@ -1,0 +1,83 @@
+import { NativeModules } from 'react-native';
+
+import BackgroundJob from 'react-native-background-job';
+
+import Constants from '../constants';
+
+import foregroundTask, { subscribeLocation } from './_foreground-task';
+import backgroundTask from './_background-task';
+import subscribeNotificationAction from './_notification-subscribe';
+import resetLocations from './_reset-locations';
+
+const LOCATION_JOB_KEY_FORE = 'AlmosthereLocationJobForeground';
+const LOCATION_JOB_KEY_BACK = 'AlmosthereLocationJobBackground';
+
+// 注册前台事件
+BackgroundJob.register({
+	jobKey: LOCATION_JOB_KEY_FORE,
+	job: () => {
+		NativeModules.AppState.getCurrentAppState((appStateData) => {
+			console.log('********* fore app state: ', appStateData.app_state, ' *********');
+			switch (appStateData.app_state) {
+				case 'active':
+				case 'background':
+					resetLocations().then(foregroundTask);
+					break;
+				case 'uninitialized':
+					break;
+				default: break;
+			}
+		}, () => { });
+	}
+});
+
+// 注册后台事件
+BackgroundJob.register({
+	jobKey: LOCATION_JOB_KEY_BACK,
+	job: () => {
+		NativeModules.AppState.getCurrentAppState((appStateData) => {
+			console.log('********* back app state: ', appStateData.app_state, ' *********');
+			switch (appStateData.app_state) {
+				case 'active':
+				case 'background':
+					break;
+				case 'uninitialized':
+					resetLocations().then(backgroundTask);
+					break;
+				default: break;
+			}
+		}, () => { });
+	}
+});
+
+
+try {
+	// 取消所有的后台任务
+	BackgroundJob.cancelAll();
+
+	// 开始订阅通知栏行为事件
+	subscribeNotificationAction();
+
+	// 开始订阅位置服务
+	subscribeLocation();
+
+	// 开始执行前台任务
+	BackgroundJob.schedule({
+		jobKey: LOCATION_JOB_KEY_FORE,
+		allowExecutionInForeground: true,
+		allowWhileIdle: true,
+		period: Constants.Common.GET_LOCATION_TIMEOUT,
+		exact: true,
+		override: true
+	});
+	
+	// 开始执行后台任务
+	BackgroundJob.schedule({
+		jobKey: LOCATION_JOB_KEY_BACK,
+		allowWhileIdle: true,
+		period: Constants.Common.GET_LOCATION_TIMEOUT,
+		override: true
+	});
+} catch(exception) {
+	console.log(exception);
+}

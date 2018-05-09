@@ -9,5 +9,6 @@ export default {
     ONCE: 0,
     PERIOD: 1
   },
+  MAX_DAY_SECONDS: 24 * 3600,
   LOCATION_RESULT: 'amap.location.onLocationResult'
 };

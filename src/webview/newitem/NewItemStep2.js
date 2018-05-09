@@ -102,7 +102,7 @@ export default class NewItemStep2 extends Component {
     } else if (!+distance) {
       ToastAndroid.show('提醒阈值应该是数字', ToastAndroid.SHORT);
     } else {
-      Locations.saveLocation({...this.state, alartLater: false, alertTomorrow: false}).then(() => {
+      Locations.saveLocation({...this.state, stopAlert: false}).then(() => {
         const { popToTop } = this.props.navigation;
         popToTop();
 
