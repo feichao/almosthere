@@ -20,7 +20,7 @@ import SplashScreen from 'react-native-splash-screen';
 import PushNotification from 'react-native-push-notification';
 
 import { Utils } from 'react-native-amap3d';
-import { Locations, Settings } from '../../model';
+import { Locations } from '../../model';
 
 import Tools from '../../utils';
 import { Version } from '../../service';
@@ -100,8 +100,6 @@ export default class App extends Component {
     }).catch(() => { });
   }
   initLocations() {
-    Settings.getSettings().then(settings => console.log('settings: ', settings));
-
     Locations.getLocations().then(locations => {
       this.setState({
         locations: locations.filter(a => !a.deleted)

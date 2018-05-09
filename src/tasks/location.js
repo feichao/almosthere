@@ -1,4 +1,4 @@
-import { NativeModules, ToastAndroid, NativeAppEventEmitter } from 'react-native';
+import { NativeModules, ToastAndroid, NativeAppEventEmitter, DeviceEventEmitter } from 'react-native';
 import PushNotification from 'react-native-push-notification';
 import BackgroundJob from 'react-native-background-job';
 import { Utils } from 'react-native-amap3d';
@@ -10,6 +10,7 @@ import { Locations, Settings } from '../model';
 
 
 let locationErrorTimes = 0; 			// 记录连续定位失败的次数
+let subscribeNotificationResult;
 let subscribeLocationResult;
 let validLocations;
 let enableHighAccuracy = false;
@@ -34,6 +35,31 @@ const resetLocation = locations => {
 		isReset = false;
 	}
 	return Promise.resolve(true);
+}
+
+const unListenNotificationResult = () => {
+	if (subscribeNotificationResult && typeof subscribeNotificationResult.remove) {
+		subscribeNotificationResult.remove();
+	}
+};
+const listenNotificationResult = () => {
+	PushNotification.registerNotificationActions(['稍后提醒', '不再提醒']);
+	subscribeNotificationResult = DeviceEventEmitter.addListener('notificationActionReceived', function(action){
+		const info = JSON.parse(action.dataJSON);
+		const locationId = info.locationId;
+		console.log('notify result:', info.action, locationId);
+		if (info.action === '稍后提醒' && locationId !== undefined) {
+			Locations.saveLocation({
+				id: locationId,
+				alartLater: true
+			});
+		} else if ((info.action === '不再提醒') && locationId !== undefined) {
+			Locations.saveLocation({
+				id: locationId,
+				alertTomorrow: true
+			});
+		}
+	});
 }
 
 const unListenLocationResult = () => {
@@ -121,7 +147,7 @@ const watchForeground = () => {
 
 			validLocations = tempLocations.filter(lo => !lo.alertTomorrow);
 
-			if (validLocations.length > 0) {
+			if (enableLocations.length > 0) {
 				AMapLocation.getLocation({
 					allowsBackgroundLocationUpdates: true,
 					gpsFirst: enableHighAccuracy,
@@ -162,9 +188,11 @@ const watchBackground = () => {
 			return PushNotification.localNotification({
 				title: '到这儿',
 				message: `正在监测离${validLocation.name}的距离, 但是 <到这儿> 已被系统清理, 请点击此处重新打开 <到这儿>.`,
-				bigText: `正在监测离${validLocation.name}的距离, 但是 <到这儿> 已被系统清理, 无法提供定位服务. 请点击此处重新打开 <到这儿>, 以便到这儿继续为您提供服务.`,
+				bigText: `正在监测离${validLocation.name}的距离, 但是 <到这儿> 已被系统清理, 无法提供定位服务. 请点击此处重新打开 <到这儿>, 以便 <到这儿> 继续为您提供服务.`,
 				vibration: 2000,
 				soundName: 'default',
+				actions: '["不再提醒"]',
+				locationId: validLocation.id
 			});
 		}
 
@@ -180,10 +208,12 @@ const watchBackground = () => {
 		if (shouldStartApp) {
 			return PushNotification.localNotification({
 				title: '到这儿',
-				message: `即将出发前往${validLocation.name}, 请点击此处打开<到这儿>`,
-				bigText: `即将出发前往${validLocation.name}, 请点击此处打开<到这儿>.`,
+				message: `即将出发前往${validLocation.name}, 请点击此处打开 <到这儿>`,
+				bigText: `即将出发前往${validLocation.name}, 请点击此处打开 <到这儿>.`,
 				vibration: 2000,
 				soundName: 'default',
+				actions: '["不再提醒"]',
+				locationId: validLocation.id
 			});
 		}
 	});
@@ -193,6 +223,9 @@ const LOCATION_JOB_KEY_FORE = 'AlmosthereLocationJobForeground';
 const LOCATION_JOB_KEY_BACK = 'AlmosthereLocationJobBackground';
 
 BackgroundJob.cancelAll();
+
+unListenNotificationResult();
+listenNotificationResult();
 
 BackgroundJob.register({
 	jobKey: LOCATION_JOB_KEY_FORE,
