@@ -32,26 +32,36 @@ const watchAppState = () => {
 	});
 };
 
-const backgroudJob = () => {
-	watchAppState().then(isFore => {
-		if (isFore) {
-			resetLocations().then(foregroundTask);
-		} else {
-			resetLocations().then(backgroundTask);
-		}
-	}).catch(error => console.log(error));
-};
-
 // 注册前台事件
 BackgroundJob.register({
 	jobKey: LOCATION_JOB_KEY_FORE,
-	job: () => backgroudJob()
+	job: () => {
+		try {
+			watchAppState().then(isFore => {
+				if (isFore) {
+					resetLocations().then(foregroundTask);
+				}
+			}).catch(error => console.log(error));
+		} catch(exception) {
+			console.log(exception);
+		}
+	}
 });
 
 // 注册后台事件
 BackgroundJob.register({
 	jobKey: LOCATION_JOB_KEY_BACK,
-	job: () => backgroudJob()
+	job: () => {
+		try {
+			watchAppState().then(isFore => {
+				if (!isFore) {
+					resetLocations().then(backgroundTask);
+				}
+			}).catch(error => console.log(error));
+		} catch(exception) {
+			console.log(exception);
+		}
+	}
 });
 
 
@@ -64,9 +74,6 @@ try {
 
 	// 开始订阅位置服务
 	subscribeLocation();
-
-	// 预先执行一遍任务, 在按计划执行
-	backgroudJob();
 
 	// 开始执行前台任务
 	BackgroundJob.schedule({
@@ -82,7 +89,7 @@ try {
 	BackgroundJob.schedule({
 		jobKey: LOCATION_JOB_KEY_BACK,
 		allowWhileIdle: true,
-		period: Constants.Common.GET_LOCATION_TIMEOUT,
+		period: Constants.Common.GET_LOCATION_TIMEOUT * 6,
 		override: true
 	});
 } catch(exception) {
