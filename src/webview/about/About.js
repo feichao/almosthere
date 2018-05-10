@@ -14,13 +14,13 @@ export default class About extends Component {
       <View style={Styles.container}>
         <Image style={Styles.logoBg} source={LogoBG}></Image>
         <Text style={Styles.welcome}>
-          到这儿 {Config.VERSION}
+          到这儿 v{Config.VERSION}
         </Text>
         <Text style={Styles.instructions}>
-          For Darling Kaier
+          Just for darling Kaier
         </Text>
         <Text style={Styles.powerby}>
-          @2018 Powered by Frank Wan
+          { `Author: Frank Wan\nEmail: len.may@foxmail.com` }
         </Text>
       </View>
     );

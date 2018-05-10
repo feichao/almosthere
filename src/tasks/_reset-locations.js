@@ -17,7 +17,7 @@ const resetLocations = () => {
     });
   }).then(locations => {
     return Locations.saveLocations(locations);
-  });
+  }).finally(() => console.log('reset locations complete'));
 }
 
 export default resetLocations;

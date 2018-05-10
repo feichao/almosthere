@@ -51,12 +51,23 @@ export default StyleSheet.create({
     fontSize: 14,
     marginTop: 5
   },
-  emptyTip: {
+  emptyTipContainer: {
+    position: 'absolute',
+    top: '22%',
+    width: '100%'
+  },
+  emptyTip1: {
+    color: '#bbb',
+    fontSize: 14,
+    lineHeight: 32,
+    textAlign: 'center',
+    width: '100%'
+  },
+  emptyTip2: {
     color: '#bbb',
     fontSize: 16,
-    position: 'absolute',
+    marginTop: 60,
     textAlign: 'center',
-    top: '40%',
     width: '100%'
   },
   opeContainer: {

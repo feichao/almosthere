@@ -6,26 +6,27 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'white',
-    marginTop: -100
+    marginTop: -120
   },
   logoBg: {
     height: 64,
     width: 64
   },
   welcome: {
-    fontSize: 18,
+    fontSize: 20,
     textAlign: 'center',
     marginTop: 12,
   },
   instructions: {
     fontSize: 14,
     textAlign: 'center',
-    margin: 24,
+    margin: 4,
   },
   powerby: {
-    bottom: 10,
+    bottom: 20,
     color: '#999',
     fontSize: 14,
+    lineHeight: 30,
     textAlign: 'center',
     position: 'absolute'
   }

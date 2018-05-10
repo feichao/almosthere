@@ -10,12 +10,14 @@
 
 #### 下载链接
 
-##### [1.6.5][5]
+##### [1.7.0][6]
+##### [1.6.5-不稳定][5]
 ##### [1.6.0-不稳定][4]
 ##### [1.5.1][3]
 ##### [1.5.0][2]
 ##### [1.0.0][1]
 
+  [6]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.7.0.apk
   [5]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.6.5.apk
   [4]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.6.apk
   [3]:http://p6igsihtx.bkt.clouddn.com/almosthere-1.5.1.apk

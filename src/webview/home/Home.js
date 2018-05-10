@@ -57,6 +57,7 @@ export default class App extends Component {
     this.listenLocationResult = this.listenLocationResult.bind(this);
 
     this.showOperateView = this.showOperateView.bind(this);
+    this.isGetLocation = false;
 
     this.subscribeLocationResult = null;
     this.state = {
@@ -100,11 +101,16 @@ export default class App extends Component {
     }).catch(() => { });
   }
   initLocations() {
+    if (this.isGetLocation) {
+      return;
+    }
+
+    this.isGetLocation = true;
     Locations.getLocations().then(locations => {
       this.setState({
         locations: locations.filter(a => !a.deleted)
       });
-    });
+    }).finally(() => this.isGetLocation = false);
   }
   updateLocation(location, enable) {
     location.enable = enable;
@@ -220,7 +226,18 @@ export default class App extends Component {
         </TouchableOpacity>
         {
           !locations.length && (
-            <Text style={Styles.emptyTip}>点击下面按钮添加一个提醒</Text>
+            <View style={Styles.emptyTipContainer}>
+              <Text style={Styles.emptyTip1}>
+                {
+                  `由于会使用到后台定位功能\n建议将 <到这儿> 放到系统白名单中\n以便为您提供更为流畅的体验`
+                }
+              </Text>
+              <Text style={Styles.emptyTip2}>
+                {
+                  `点击下面按钮添加一个提醒`
+                }
+              </Text>
+            </View>
           )
         }
         <TouchableOpacity style={Styles.addBtn} activeOpacity={0.75} onPress={this.navigateToNewItem}>
